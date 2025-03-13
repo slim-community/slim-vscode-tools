@@ -6,7 +6,8 @@ const {
 } = require('vscode-languageserver/node');
 
 const connection = createConnection(ProposedFeatures.all);
-const documents = new TextDocuments();
+const { TextDocument } = require('vscode-languageserver-textdocument');
+const documents = new TextDocuments(TextDocument);
 
 documents.listen(connection);
 
@@ -84,9 +85,14 @@ connection.onCompletionResolve(item => {
 
 connection.onHover((params) => {
   const document = documents.get(params.textDocument.uri);
+  if (!document) {
+    console.log('No document found.');
+    return null;
+  }
   const position = params.position;
   const text = document.getText();
   const word = getWordAtPosition(text, position);
+  //console.log('Hovered word:', word); // Add this to debug the extracted word
 
   if (word === 'initialize') {
     return {
@@ -127,6 +133,9 @@ connection.onHover((params) => {
 
 connection.onDefinition((params) => {
   const document = documents.get(params.textDocument.uri);
+  if (!document) {
+    return null;
+  }
   const position = params.position;
   const text = document.getText();
   const word = getWordAtPosition(text, position);
@@ -154,6 +163,9 @@ connection.onDefinition((params) => {
 
 connection.onReferences((params) => {
   const document = documents.get(params.textDocument.uri);
+  if (!document) {
+    return [];
+  }
   const position = params.position;
   const text = document.getText();
   const word = getWordAtPosition(text, position);
@@ -179,6 +191,9 @@ connection.onReferences((params) => {
 
 connection.onDocumentSymbol((params) => {
   const document = documents.get(params.textDocument.uri);
+  if (!document) {
+    return [];
+  }
   const text = document.getText();
   const symbols = [];
 
@@ -205,6 +220,9 @@ connection.onDocumentSymbol((params) => {
 
 connection.onDocumentFormatting((params) => {
   const document = documents.get(params.textDocument.uri);
+  if (!document) {
+    return [];
+  }
   const text = document.getText();
   const formattedText = formatText(text);
 
@@ -226,9 +244,27 @@ function formatText(text) {
 
 function getWordAtPosition(text, position) {
   const lines = text.split('\n');
+  if (position.line >= lines.length) {
+    return null;
+  }
+
   const line = lines[position.line];
-  const words = line.split(/\s+/);
-  return words.find(word => line.indexOf(word) <= position.character && line.indexOf(word) + word.length >= position.character);
+
+  // Match only words, ignoring surrounding punctuation
+  const wordMatch = line.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g);
+  
+  if (!wordMatch) return null;
+
+  for (const word of wordMatch) {
+    const start = line.indexOf(word);
+    const end = start + word.length;
+
+    if (position.character >= start && position.character <= end) {
+      return word;
+    }
+  }
+
+  return null;
 }
 
 connection.listen();
