@@ -48,13 +48,13 @@
     "prefix": "init",
     "body": [
       "initialize() {",
-      "  initializeSLiMOptions($1);",
+      "  initializeSLiMOptions(${1:options});",
       "  initializeTreeSeq();",
-      "  initializeMutationRate($2);",
+      "  initializeMutationRate(${2:mutationRate});",
       "  initializeMutationType(\"m1\", 0.5, \"f\", 0.0);",
       "  initializeGenomicElementType(\"g1\", m1, 1.0);",
-      "  initializeGenomicElement(g1, 0, $3);",
-      "  initializeRecombinationRate($4);",
+      "  initializeGenomicElement(g1, 0, ${3:genomicElementEnd});",
+      "  initializeRecombinationRate(${4:recombinationRate});",
       "}"
     ],
     "description": "Initialize a SLiM simulation"
@@ -63,14 +63,14 @@
     "prefix": "subpop",
     "body": [
       "initialize() {",
-      "  initializeSLiMOptions($1);",
+      "  initializeSLiMOptions(${1:options});",
       "  initializeTreeSeq();",
-      "  initializeMutationRate($2);",
+      "  initializeMutationRate(${2:mutationRate});",
       "  initializeMutationType(\"m1\", 0.5, \"f\", 0.0);",
       "  initializeGenomicElementType(\"g1\", m1, 1.0);",
-      "  initializeGenomicElement(g1, 0, $3);",
-      "  initializeRecombinationRate($4);",
-      "  sim.addSubpop(\"p1\", $5);",
+      "  initializeGenomicElement(g1, 0, ${3:genomicElementEnd});",
+      "  initializeRecombinationRate(${4:recombinationRate});",
+      "  sim.addSubpop(\"p1\", ${5:subpopSize});",
       "}"
     ],
     "description": "Create a subpopulation in SLiM"
@@ -115,28 +115,28 @@
   "Output VCF": {
     "prefix": "outputVCF",
     "body": [
-      "sim.outputVCF(\"$1\");"
+      "sim.outputVCF(\"${1:vcfOutput}\");"
     ],
     "description": "Output VCF file"
   },
   "Output Tree Sequence": {
     "prefix": "outputTreeSeq",
     "body": [
-      "sim.treeSeqOutput(\"$1\");"
+      "sim.treeSeqOutput(\"${1:treeSeqOutput}\");"
     ],
     "description": "Output tree sequence file"
   },
   "Read VCF": {
     "prefix": "readVCF",
     "body": [
-      "sim.readVCF(\"$1\");"
+      "sim.readVCF(\"${1:vcfInput}\");"
     ],
     "description": "Read VCF file"
   },
   "Read Tree Sequence": {
     "prefix": "readTreeSeq",
     "body": [
-      "sim.treeSeqInput(\"$1\");"
+      "sim.treeSeqInput(\"${1:treeSequenceInput}\");"
     ],
     "description": "Read tree sequence file"
   },
@@ -144,7 +144,7 @@
     "prefix": "loopInds",
     "body": [
       "foreach (individual in sim.subpopulations.individuals) {",
-      "  $1",
+      "  $1 // Placeholder for individual processing",
       "}"
     ],
     "description": "Loop over all individuals in the simulation"
@@ -153,7 +153,7 @@
     "prefix": "loopMuts",
     "body": [
       "foreach (mut in sim.mutations) {",
-      "  $1",
+      "  $1 // Placeholder for mutation processing",
       "}"
     ],
     "description": "Loop over all mutations in the simulation"
@@ -162,7 +162,7 @@
     "prefix": "selection",
     "body": [
       "fitness(NULL) {",
-      "  return $1;",
+      "  return ${1:selectionCoefficient};",
       "}"
     ],
     "description": "Apply custom selection pressure"
@@ -190,7 +190,7 @@
   "Custom Mutation Initialization": {
     "prefix": "customMut",
     "body": [
-      "initializeMutationType(\"$1\", $2, \"$3\", $4);"
+      "initializeMutationType(\"${1:mutationType}\", ${2:dominanceCoeff}, \"${3:mutationType}\", ${4:selectionCoeff});"
     ],
     "description": "Create a mutation type with custom parameters"
   },
@@ -207,7 +207,7 @@
     "prefix": "survival",
     "body": [
       "survival() {",
-      "  return (runif(1) < $1) ? T : F;",
+      "  return (runif(1) < ${1:probSurvival}) ? T : F;",
       "}"
     ],
     "description": "Define survival probability for individuals"
@@ -228,10 +228,10 @@
     "prefix": "timeSel",
     "body": [
       "fitness(NULL) {",
-      "  if (sim.generation < $1) {",
+      "  if (sim.generation < ${1:timeOfSelectionOnset}) {",
       "    return 1.0;",
       "  } else {",
-      "    return $2;",
+      "    return ${2:selectionCoefficient};",
       "  }",
       "}"
     ],
@@ -258,7 +258,7 @@
     "prefix": "sweep",
     "body": [
       "mutationEffect(m1) {",
-      "  if (mut.position > $1 && mut.position < $2) {",
+      "  if (mut.position > ${1:sweepPositionLeft} && mut.position < ${2:sweepPositionRight}) {",
       "    return 2.0;",
       "  } else {",
       "    return 1.0;",
@@ -271,14 +271,14 @@
     "prefix": "initWF",
     "body": [
       "initialize() {",
-      "  initializeMutationRate($1);",
+      "  initializeMutationRate(${1:mutationRate});",
       "  initializeMutationType(\"m1\", 0.5, \"f\", 0.0);",
       "  initializeGenomicElementType(\"g1\", m1, 1.0);",
-      "  initializeGenomicElement(g1, 0, $2);",
-      "  initializeRecombinationRate($3);",
+      "  initializeGenomicElement(g1, 0, ${2:genomicElementEnd});",
+      "  initializeRecombinationRate(${3:recombinationRate});",
       "}",
       "1 early() {",
-      "  sim.addSubpop(\"p1\", $4);",
+      "  sim.addSubpop(\"p1\", ${4:subpopSize});",
       "}",
       "1000 late() {}"
     ],
@@ -290,20 +290,18 @@
       "initialize() {",
       "  initializeSLiMOptions(nucleotideBased=T);",
       "  initializeTreeSeq();",
-      "  initializeMutationRate($1);",
-      "  initializeMutationType(\"m1\", 0.5, \"f\", $2);  // Selection coefficient",
+      "  initializeMutationRate(${1:mutationRate);",
+      "  initializeMutationType(\"m1\", 0.5, \"f\", ${2:selectionCoeff});  // Selection coefficient",
       "  initializeGenomicElementType(\"g1\", m1, 1.0);",
-      "  initializeGenomicElement(g1, 0, $3);",
-      "  initializeRecombinationRate($4);",
+      "  initializeGenomicElement(g1, 0, ${3:genomicElementEnd});",
+      "  initializeRecombinationRate(${4:recombinationRate});",
       "}",
       "1 {",
-      "  sim.addSubpop(\"p1\", $5);",
+      "  sim.addSubpop(\"p1\", ${5:subpopSize});",
       "}"
     ],
     "description": "Initialize a model with selection"
   }
-
-
 }
 
 
