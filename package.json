@@ -1,8 +1,17 @@
 {
-  "name": "slim-tools",
+  "name": "slim-vscode-tools",
   "displayName": "slim-tools",
   "description": "language extension for the SLiM simulation package",
   "version": "0.0.1",
+  "publisher": "your-name",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andrewkern/slim-tools.git"
+  },
+  "bugs":{
+    "url": "https://github.com/andrewkern/slim-tools/issues"
+  },
+  "homepage": "https://github.com/andrewkern/slim-tools",
   "main": "index.js",
   "engines": {
     "vscode": "^1.98.0"
@@ -55,7 +64,7 @@
         {
           "id": "slimTools",
           "title": "SLiM",
-          "icon": "media/SLiM_vector-thicc.svg"
+          "icon": "media/SLiM_vector.svg"
         }
       ]
     },
