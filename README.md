@@ -1,65 +1,59 @@
 # slim-tools README
 
-This is the README for your extension "slim-tools". After writing up a brief description, we recommend including the following sections.
+`slim-tools` is a Visual Studio Code extension designed to provide comprehensive support for the SLiM simulation package. This extension includes features such as syntax highlighting, snippets, IntelliSense, and commands to enhance the development experience for SLiM scripts.
 
-## Features
+## ✨ Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### Syntax Highlighting
+Provides syntax highlighting for SLiM scripts using a TextMate grammar. This includes:
+- Line and block comments
+- Double and single-quoted strings with escape sequences
+- Control keywords (`if`, `else`, `for`, `while`, `function`, `return`, `break`, `continue`)
+- SLiM-specific keywords (`initialize`, `sim`, `initializeSLiMOptions`, etc.)
+- Numeric constants
+- Language variables (`this`, `self`)
+- Function definitions and parameters
 
-For example if there is an image subfolder under your extension project workspace:
+### Snippets
+Includes a set of useful snippets to speed up the development process. For example:
+- `initWF`: Initializes a basic Wright-Fisher model.
+- `initSel`: Initializes a model with selection.
 
-\!\[feature X\]\(images/feature-x.png\)
+### IntelliSense
+Provides basic IntelliSense features such as auto-completion for keywords, functions, and variables.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+### Commands
+Adds a custom view in the activity bar with a command to run SLiM scripts:
+- **Run SLiM**: Executes the currently open SLiM script using the SLiM interpreter.
+
+### Status Bar Integration
+Adds a status bar button to quickly run the SLiM script in the active editor.
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- Visual Studio Code version 1.98.0 or higher
+- SLiM interpreter installed and accessible in your system's PATH or configured in the extension settings
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+* `slimTools.slimInterpreterPath`: Path to the SLiM interpreter (e.g., `/usr/local/bin/slim` or `C:\\Users\\YourName\\slim.exe`).
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- None at the moment. Please report any issues on the [GitHub repository](https://github.com/your-repo/slim-tools/issues).
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of ...
+Initial release of `slim-tools` with the following features:
+- Syntax highlighting for SLiM scripts
+- Snippets for common SLiM patterns
+- Basic IntelliSense support
+- Custom view and command to run SLiM scripts
+- Status bar integration
 
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
 
 **Enjoy!**
