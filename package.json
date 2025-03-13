@@ -39,7 +39,17 @@
         "language": "slim",
         "path": "./snippets/slim.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "SLiM Simulator",
+      "properties": {
+        "slimTools.slimInterpreterPath": {
+          "type": "string",
+          "default": "slim",
+          "description": "Path to the SLiM interpreter (e.g., /usr/local/bin/slim or C:\\\\Users\\\\YourName\\\\slim.exe)"
+        }
+      }
+    }
   },
   "scripts": {
     "compile": "tsc -p ./",

@@ -33,6 +33,37 @@ function activate(context) {
   );
 
   client.start();
+
+  // 🔹 Create Status Bar Button
+  let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  statusBarItem.text = "$(play) Run SLiM";
+  statusBarItem.tooltip = "Run SLiM on the currently open file";
+  statusBarItem.command = "slimTools.runSLiM";
+  statusBarItem.show();
+
+  // 🔹 Register the SLiM execution command
+  let runSlimCommand = vscode.commands.registerCommand('slimTools.runSLiM', () => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      vscode.window.showErrorMessage("No active SLiM file.");
+      return;
+    }
+
+    // 🔹 Get the SLiM interpreter path from user settings
+    const config = vscode.workspace.getConfiguration('slimTools');
+    const slimPath = config.get('slimInterpreterPath', 'slim'); // Default to "slim"
+
+    const filePath = editor.document.fileName;
+
+    // 🔹 Run SLiM in a new terminal
+    let terminal = vscode.window.createTerminal("SLiM Simulation");
+    terminal.sendText(`${slimPath} "${filePath}"`);
+    terminal.show();
+  });
+
+  // 🔹 Register everything in the extension context
+  context.subscriptions.push(runSlimCommand);
+  context.subscriptions.push(statusBarItem);
 }
 
 function deactivate() {
