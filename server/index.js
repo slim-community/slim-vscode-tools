@@ -8,6 +8,20 @@ const {
 const connection = createConnection(ProposedFeatures.all);
 const { TextDocument } = require('vscode-languageserver-textdocument');
 const documents = new TextDocuments(TextDocument);
+const fs = require('fs');
+const path = require('path');
+
+// Load SLiM function data from JSON file
+const functionsPath = path.join(__dirname, 'slim_functions.json');
+const eidosFunctionsPath = path.join(__dirname, 'eidos_functions.json');
+
+let functionsData = {};
+if (fs.existsSync(functionsPath)) {
+  functionsData = JSON.parse(fs.readFileSync(functionsPath, 'utf8'));
+}
+if (fs.existsSync(eidosFunctionsPath)) {
+    Object.assign(functionsData, JSON.parse(fs.readFileSync(eidosFunctionsPath, 'utf8')));
+}
 
 documents.listen(connection);
 
@@ -21,7 +35,7 @@ connection.onInitialize(() => {
       hoverProvider: true,
       definitionProvider: true,
       referencesProvider: true,
-      documentSymbolProvider: true,
+      documentSymbolProvider: true, // ✅ Ensures document symbols are handled
       documentFormattingProvider: true
     }
   };
@@ -49,7 +63,7 @@ async function validateTextDocument(textDocument) {
         end: textDocument.positionAt(m.index + m[0].length)
       },
       message: `Found TODO`,
-      source: 'ex'
+      source: 'slim-tools'
     };
     diagnostics.push(diagnostic);
   }
@@ -57,143 +71,11 @@ async function validateTextDocument(textDocument) {
   connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
-connection.onCompletion(() => {
-  return [
-    {
-      label: 'initialize',
-      kind: 1,
-      data: 1
-    },
-    {
-      label: 'sim',
-      kind: 6,
-      data: 2
-    }
-  ];
-});
-
-connection.onCompletionResolve(item => {
-  if (item.data === 1) {
-    item.detail = 'SLiM initialize function';
-    item.documentation = 'Initialize the SLiM simulation environment.';
-  } else if (item.data === 2) {
-    item.detail = 'SLiM simulation object';
-    item.documentation = 'The main simulation object in SLiM.';
-  }
-  return item;
-});
-
-connection.onHover((params) => {
-  const document = documents.get(params.textDocument.uri);
-  if (!document) {
-    console.log('No document found.');
-    return null;
-  }
-  const position = params.position;
-  const text = document.getText();
-  const word = getWordAtPosition(text, position);
-  //console.log('Hovered word:', word); // Add this to debug the extracted word
-
-  if (word === 'initialize') {
-    return {
-      contents: 'Initialize the SLiM simulation environment.'
-    };
-  } else if (word === 'sim') {
-    return {
-      contents: 'The main simulation object in SLiM.'
-    };
-  } else if (word === 'initializeSLiMOptions') {
-    return {
-      contents: 'Initialize SLiM options.'
-    };
-  } else if (word === 'initializeMutationRate') {
-    return {
-      contents: 'Initialize the mutation rate.'
-    };
-  } else if (word === 'initializeMutationType') {
-    return {
-      contents: 'Initialize a mutation type.'
-    };
-  } else if (word === 'initializeGenomicElementType') {
-    return {
-      contents: 'Initialize a genomic element type.'
-    };
-  } else if (word === 'initializeGenomicElement') {
-    return {
-      contents: 'Initialize a genomic element.'
-    };
-  } else if (word === 'initializeRecombinationRate') {
-    return {
-      contents: 'Initialize the recombination rate.'
-    };
-  }
-
-  return null;
-});
-
-connection.onDefinition((params) => {
-  const document = documents.get(params.textDocument.uri);
-  if (!document) {
-    return null;
-  }
-  const position = params.position;
-  const text = document.getText();
-  const word = getWordAtPosition(text, position);
-
-  if (word === 'initialize') {
-    return {
-      uri: params.textDocument.uri,
-      range: {
-        start: { line: 0, character: 0 },
-        end: { line: 0, character: 10 }
-      }
-    };
-  } else if (word === 'initializeSLiMOptions') {
-    return {
-      uri: params.textDocument.uri,
-      range: {
-        start: { line: 1, character: 0 },
-        end: { line: 1, character: 20 }
-      }
-    };
-  }
-
-  return null;
-});
-
-connection.onReferences((params) => {
-  const document = documents.get(params.textDocument.uri);
-  if (!document) {
-    return [];
-  }
-  const position = params.position;
-  const text = document.getText();
-  const word = getWordAtPosition(text, position);
-
-  const references = [];
-  const lines = text.split('\n');
-  lines.forEach((line, index) => {
-    let match;
-    const regex = new RegExp(`\\b${word}\\b`, 'g');
-    while ((match = regex.exec(line)) !== null) {
-      references.push({
-        uri: params.textDocument.uri,
-        range: {
-          start: { line: index, character: match.index },
-          end: { line: index, character: match.index + word.length }
-        }
-      });
-    }
-  });
-
-  return references;
-});
-
+// ✅ Re-added document symbol provider to prevent "Unhandled method" error
 connection.onDocumentSymbol((params) => {
   const document = documents.get(params.textDocument.uri);
-  if (!document) {
-    return [];
-  }
+  if (!document) return [];
+
   const text = document.getText();
   const symbols = [];
 
@@ -218,29 +100,25 @@ connection.onDocumentSymbol((params) => {
   return symbols;
 });
 
-connection.onDocumentFormatting((params) => {
-  const document = documents.get(params.textDocument.uri);
-  if (!document) {
-    return [];
+connection.onHover((params) => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) return null;
+
+    const position = params.position;
+    const text = document.getText();
+    const word = getWordAtPosition(text, position);
+
+    if (functionsData[word]) {
+      return {
+          contents: {
+              kind: "markdown",
+              value: functionsData[word]
+          }
+    };    
   }
-  const text = document.getText();
-  const formattedText = formatText(text);
 
-  return [
-    {
-      range: {
-        start: { line: 0, character: 0 },
-        end: { line: document.lineCount, character: 0 }
-      },
-      newText: formattedText
-    }
-  ];
+    return null;
 });
-
-function formatText(text) {
-  // Simple formatting example: trim trailing whitespace and ensure a newline at the end
-  return text.split('\n').map(line => line.trimEnd()).join('\n') + '\n';
-}
 
 function getWordAtPosition(text, position) {
   const lines = text.split('\n');
@@ -249,10 +127,8 @@ function getWordAtPosition(text, position) {
   }
 
   const line = lines[position.line];
-
-  // Match only words, ignoring surrounding punctuation
   const wordMatch = line.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g);
-  
+
   if (!wordMatch) return null;
 
   for (const word of wordMatch) {

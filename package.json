@@ -88,5 +88,10 @@
   "dependencies": {
     "vscode-languageclient": "^8.0.0",
     "vscode-languageserver-textdocument": "^1.0.12"
-  }
+  },
+  "files": [
+    "server/",
+    "server/slim_functions.json",
+    "server/eidos_functions.json"
+  ]
 }
