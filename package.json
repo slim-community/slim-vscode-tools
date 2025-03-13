@@ -49,6 +49,23 @@
           "description": "Path to the SLiM interpreter (e.g., /usr/local/bin/slim or C:\\\\Users\\\\YourName\\\\slim.exe)"
         }
       }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "slimTools",
+          "title": "SLiM",
+          "icon": "media/slim-icon.png"
+        }
+      ]
+    },
+    "views": {
+      "slimTools": [
+        {
+          "id": "slimCommandsView",
+          "name": "SLiM Commands"
+        }
+      ]
     }
   },
   "scripts": {
