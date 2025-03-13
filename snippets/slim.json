@@ -1,0 +1,310 @@
+{
+  "Print to console": {
+    "prefix": "print",
+    "body": [
+      "cat(\"$1\");"
+    ],
+    "description": "Print a message to the console"
+  },
+  "For loop": {
+    "prefix": "for",
+    "body": [
+      "for (int $1 = 0; $1 < $2; $1++) {",
+      "  $3",
+      "}"
+    ],
+    "description": "Create a for loop"
+  },
+  "If statement": {
+    "prefix": "if",
+    "body": [
+      "if ($1) {",
+      "  $2",
+      "}"
+    ],
+    "description": "Create an if statement"
+  },
+  "Function definition": {
+    "prefix": "func",
+    "body": [
+      "function $1($2) {",
+      "  $3",
+      "}"
+    ],
+    "description": "Define a function"
+  },
+  "Simulation run": {
+    "prefix": "simrun",
+    "body": [
+      "initialize() {",
+      "  $1",
+      "}",
+      "1: $2",
+      "sim.run();"
+    ],
+    "description": "Run a SLiM simulation"
+  },
+  "Initialize SLiM": {
+    "prefix": "init",
+    "body": [
+      "initialize() {",
+      "  initializeSLiMOptions($1);",
+      "  initializeTreeSeq();",
+      "  initializeMutationRate($2);",
+      "  initializeMutationType(\"m1\", 0.5, \"f\", 0.0);",
+      "  initializeGenomicElementType(\"g1\", m1, 1.0);",
+      "  initializeGenomicElement(g1, 0, $3);",
+      "  initializeRecombinationRate($4);",
+      "}"
+    ],
+    "description": "Initialize a SLiM simulation"
+  },
+  "Create Subpopulation": {
+    "prefix": "subpop",
+    "body": [
+      "initialize() {",
+      "  initializeSLiMOptions($1);",
+      "  initializeTreeSeq();",
+      "  initializeMutationRate($2);",
+      "  initializeMutationType(\"m1\", 0.5, \"f\", 0.0);",
+      "  initializeGenomicElementType(\"g1\", m1, 1.0);",
+      "  initializeGenomicElement(g1, 0, $3);",
+      "  initializeRecombinationRate($4);",
+      "  sim.addSubpop(\"p1\", $5);",
+      "}"
+    ],
+    "description": "Create a subpopulation in SLiM"
+  },
+  "Mutation Effect": {
+    "prefix": "mutEffect",
+    "body": [
+      "initializeMutationType(\"m1\", 0.5, \"f\", 0.0);",
+      "m1.mutationEffect = function (mut) {",
+      "  $1",
+      "};"
+    ],
+    "description": "Define a mutation effect"
+  },
+  "Reproduction Callback": {
+    "prefix": "reproCallback",
+    "body": [
+      "reproduction() {",
+      "  $1",
+      "}"
+    ],
+    "description": "Define a reproduction callback"
+  },
+  "Fitness Effect": {
+    "prefix": "fitnessEffect",
+    "body": [
+      "initializeMutationType(\"m1\", 0.5, \"f\", 0.0);",
+      "m1.fitnessEffect = function (h, mut) {",
+      "  return $1;",
+      "};"
+    ],
+    "description": "Define a fitness effect"
+  },
+  "Add Individual": {
+    "prefix": "addInd",
+    "body": [
+      "sim.addSubpop(\"p1\", $1);",
+      "p1.addCloned(individuals, $2);"
+    ],
+    "description": "Add individuals to a subpopulation"
+  },
+  "Output VCF": {
+    "prefix": "outputVCF",
+    "body": [
+      "sim.outputVCF(\"$1\");"
+    ],
+    "description": "Output VCF file"
+  },
+  "Output Tree Sequence": {
+    "prefix": "outputTreeSeq",
+    "body": [
+      "sim.treeSeqOutput(\"$1\");"
+    ],
+    "description": "Output tree sequence file"
+  },
+  "Read VCF": {
+    "prefix": "readVCF",
+    "body": [
+      "sim.readVCF(\"$1\");"
+    ],
+    "description": "Read VCF file"
+  },
+  "Read Tree Sequence": {
+    "prefix": "readTreeSeq",
+    "body": [
+      "sim.treeSeqInput(\"$1\");"
+    ],
+    "description": "Read tree sequence file"
+  },
+  "Loop Over Individuals": {
+    "prefix": "loopInds",
+    "body": [
+      "foreach (individual in sim.subpopulations.individuals) {",
+      "  $1",
+      "}"
+    ],
+    "description": "Loop over all individuals in the simulation"
+  },
+  "Loop Over Mutations": {
+    "prefix": "loopMuts",
+    "body": [
+      "foreach (mut in sim.mutations) {",
+      "  $1",
+      "}"
+    ],
+    "description": "Loop over all mutations in the simulation"
+  },
+  "Custom Selection": {
+    "prefix": "selection",
+    "body": [
+      "fitness(NULL) {",
+      "  return $1;",
+      "}"
+    ],
+    "description": "Apply custom selection pressure"
+  },
+  "Track Mutations": {
+    "prefix": "trackMuts",
+    "body": [
+      "late() {",
+      "  foreach (mut in sim.mutations) {",
+      "    catn(\"Mutation at position \" + mut.position + \" with fitness effect \" + mut.selectionCoeff);",
+      "  }",
+      "}"
+    ],
+    "description": "Track mutations in the simulation"
+  },
+  "Migration Event": {
+    "prefix": "migration",
+    "body": [
+      "late() {",
+      "  p1.individuals[p1.individualCount/2:].moveTo(p2);",
+      "}"
+    ],
+    "description": "Move individuals between subpopulations"
+  },
+  "Custom Mutation Initialization": {
+    "prefix": "customMut",
+    "body": [
+      "initializeMutationType(\"$1\", $2, \"$3\", $4);"
+    ],
+    "description": "Create a mutation type with custom parameters"
+  },
+  "Record Population Size": {
+    "prefix": "logPopSize",
+    "body": [
+      "late() {",
+      "  catn(\"Generation \" + sim.generation + \": \" + p1.individualCount + \" individuals\");",
+      "}"
+    ],
+    "description": "Log the population size each generation"
+  },
+  "Survival Probability": {
+    "prefix": "survival",
+    "body": [
+      "survival() {",
+      "  return (runif(1) < $1) ? T : F;",
+      "}"
+    ],
+    "description": "Define survival probability for individuals"
+  },
+  "Output Fixed Mutations": {
+    "prefix": "outputFixedMuts",
+    "body": [
+      "late() {",
+      "  fixedMuts = sim.mutations[sim.mutations.fixationGeneration >= 0];",
+      "  foreach (mut in fixedMuts) {",
+      "    catn(\"Fixed mutation at \" + mut.position);",
+      "  }",
+      "}"
+    ],
+    "description": "Output fixed mutations"
+  },
+  "Time-Dependent Selection": {
+    "prefix": "timeSel",
+    "body": [
+      "fitness(NULL) {",
+      "  if (sim.generation < $1) {",
+      "    return 1.0;",
+      "  } else {",
+      "    return $2;",
+      "  }",
+      "}"
+    ],
+    "description": "Apply time-dependent selection"
+  },
+  "Selfing Reproduction": {
+    "prefix": "selfing",
+    "body": [
+      "reproduction() {",
+      "  subpop.addSelfed(individual);",
+      "}"
+    ],
+    "description": "Implement selfing as a reproduction mode"
+  },
+  "Add Neutral Mutations": {
+    "prefix": "neutralMuts",
+    "body": [
+      "initializeMutationType(\"m1\", 0.5, \"f\", 0.0);",
+      "m1.color = \"gray\";"
+    ],
+    "description": "Add neutral mutations"
+  },
+  "Apply Selective Sweep": {
+    "prefix": "sweep",
+    "body": [
+      "mutationEffect(m1) {",
+      "  if (mut.position > $1 && mut.position < $2) {",
+      "    return 2.0;",
+      "  } else {",
+      "    return 1.0;",
+      "  }",
+      "}"
+    ],
+    "description": "Apply a selective sweep in a genomic region"
+  },
+  "Initialize Wright-Fisher Model": {
+    "prefix": "initWF",
+    "body": [
+      "initialize() {",
+      "  initializeSLiMOptions(nucleotideBased=T);",
+      "  initializeTreeSeq();",
+      "  initializeMutationRate($1);",
+      "  initializeMutationType(\"m1\", 0.5, \"f\", 0.0);",
+      "  initializeGenomicElementType(\"g1\", m1, 1.0);",
+      "  initializeGenomicElement(g1, 0, $2);",
+      "  initializeRecombinationRate($3);",
+      "}",
+      "1 {",
+      "  sim.addSubpop(\"p1\", $4);",
+      "}"
+    ],
+    "description": "Initialize a basic Wright-Fisher model"
+  },
+  "Constant Population Size with Selection": {
+    "prefix": "initSel",
+    "body": [
+      "initialize() {",
+      "  initializeSLiMOptions(nucleotideBased=T);",
+      "  initializeTreeSeq();",
+      "  initializeMutationRate($1);",
+      "  initializeMutationType(\"m1\", 0.5, \"f\", $2);  // Selection coefficient",
+      "  initializeGenomicElementType(\"g1\", m1, 1.0);",
+      "  initializeGenomicElement(g1, 0, $3);",
+      "  initializeRecombinationRate($4);",
+      "}",
+      "1 {",
+      "  sim.addSubpop(\"p1\", $5);",
+      "}"
+    ],
+    "description": "Initialize a model with selection"
+  }
+
+
+}
+
+

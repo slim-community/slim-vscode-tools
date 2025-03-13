@@ -1,0 +1,51 @@
+{
+    "comments": {
+        // symbol used for single line comment. Remove this entry if your language does not support line comments
+        "lineComment": "//",
+        // symbols used for start and end a block comment. Remove this entry if your language does not support block comments
+        "blockComment": [ "/*", "*/" ]
+    },
+    // symbols used as brackets
+    "brackets": [
+        ["{", "}"],
+        ["[", "]"],
+        ["(", ")"]
+    ],
+    // symbols that are auto closed when typing
+    "autoClosingPairs": [
+        { "open": "{", "close": "}" },
+        { "open": "[", "close": "]" },
+        { "open": "(", "close": ")" },
+        { "open": "\"", "close": "\"" },
+        { "open": "'", "close": "'" }
+    ],
+    // symbols that can be used to surround a selection
+    "surroundingPairs": [
+        { "open": "{", "close": "}" },
+        { "open": "[", "close": "]" },
+        { "open": "(", "close": ")" },
+        { "open": "\"", "close": "\"" },
+        { "open": "'", "close": "'" }
+    ],
+    "folding": {
+        "markers": {
+            "start": "^\\s*#region\\b",
+            "end": "^\\s*#endregion\\b"
+        }
+    },
+    "onEnterRules": [
+        {
+            "beforeText": "^\\s*(?:function|if|else|for|while|switch|case|default|try|catch|finally|do|with|class|interface|enum|namespace|module)\\b.*\\{[^}\"']*$",
+            "afterText": "^\\s*\\}",
+            "action": {
+                "indentAction": "IndentOutdent"
+            }
+        },
+        {
+            "beforeText": "^\\s*(?:function|if|else|for|while|switch|case|default|try|catch|finally|do|with|class|interface|enum|namespace|module)\\b.*\\{[^}\"']*$",
+            "action": {
+                "indentAction": "Indent"
+            }
+        }
+    ]
+}

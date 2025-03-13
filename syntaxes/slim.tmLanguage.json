@@ -1,0 +1,67 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "eidos",
+	"patterns": [
+		{
+			"name": "comment.line.double-slash.slim",
+			"match": "//.*$"
+		},
+		{
+			"name": "comment.block.slim",
+			"begin": "/\\*",
+			"end": "\\*/"
+		},
+		{
+			"name": "string.quoted.double.slim",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.slim",
+					"match": "\\\\."
+				}
+			]
+		},
+		{
+			"name": "string.quoted.single.slim",
+			"begin": "'",
+			"end": "'",
+			"patterns": [
+				{
+					"name": "constant.character.escape.slim",
+					"match": "\\\\."
+				}
+			]
+		},
+		{
+			"name": "keyword.control.slim",
+			"match": "\\b(if|else|for|while|function|return|break|continue)\\b"
+		},
+		{
+			"name": "keyword.other.slim",
+			"match": "\\b(initialize|sim|initializeSLiMOptions|initializeTreeSeq|initializeMutationRate|initializeMutationType|initializeGenomicElementType|initializeGenomicElement|initializeRecombinationRate|addSubpop|addCloned|outputVCF|outputTreeSeq|readVCF|treeSeqInput|treeSeqOutput)\\b"
+		},
+		{
+			"name": "constant.numeric.slim",
+			"match": "\\b\\d+(\\.\\d+)?\\b"
+		},
+		{
+			"name": "variable.language.slim",
+			"match": "\\b(this|self)\\b"
+		},
+		{
+			"name": "storage.type.function.slim",
+			"match": "\\bfunction\\b"
+		},
+		{
+			"name": "entity.name.function.slim",
+			"match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\s*(?=\\()"
+		},
+		{
+			"name": "variable.parameter.function.slim",
+			"match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+		}
+	],
+	"repository": {},
+	"scopeName": "source.slim"
+}

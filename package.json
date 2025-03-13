@@ -1,0 +1,55 @@
+{
+  "name": "slim-tools",
+  "displayName": "slim-tools",
+  "description": "language extension for the SLiM simulation package",
+  "version": "0.0.1",
+  "main": "index.js",
+  "engines": {
+    "vscode": "^1.98.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:slim"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "slim",
+        "aliases": [
+          "SLiM",
+          "slim"
+        ],
+        "extensions": [
+          ".slim"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "slim",
+        "scopeName": "source.slim",
+        "path": "./syntaxes/slim.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "slim",
+        "path": "./snippets/slim.json"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -p ./ --watch",
+    "prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^8.0.0"
+  }
+}
