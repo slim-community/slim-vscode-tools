@@ -81,7 +81,11 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -p ./ --watch",
-    "prepublish": "npm run compile"
+    "clean": "rimraf out dist coverage node_modules && npm cache clean --force",
+    "preclean": "npm run clean",
+    "prepublish": "npm run compile",
+    "package": "vsce package",
+    "prepublishOnly": "npm run preclean && npm run compile"
   },
   "devDependencies": {
     "@types/node": "^16.18.126",

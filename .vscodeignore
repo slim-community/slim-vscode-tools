@@ -1,5 +1,45 @@
+# Exclude VSCode-specific folders
 .vscode/**
+
+# Exclude test-related files
 .vscode-test/**
+tests/**
+__tests__/**
+
+# Ignore Git files
+.git/
 .gitignore
+.gitattributes
+
+# Exclude build artifacts
+out/
+dist/
+*.map
+*.ts
+
+# Exclude dependency-related files
+node_modules/**      # Ensure only required modules are included
+package-lock.json
+yarn.lock
+
+# Exclude logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Exclude IDE/editor-specific files
+.DS_Store
+Thumbs.db
+
+# Exclude documentation files
 vsc-extension-quickstart.md
+README.md
+CHANGELOG.md
+
+# Exclude reference documentation
 reference_docs/**
+
+# Exclude coverage reports
+coverage/
+nyc_output/
+lcov-report/
