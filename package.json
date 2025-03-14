@@ -8,7 +8,7 @@
     "type": "git",
     "url": "https://github.com/andrewkern/slim-tools.git"
   },
-  "bugs":{
+  "bugs": {
     "url": "https://github.com/andrewkern/slim-tools/issues"
   },
   "homepage": "https://github.com/andrewkern/slim-tools",
@@ -20,7 +20,8 @@
     "Programming Languages"
   ],
   "activationEvents": [
-    "onLanguage:slim"
+    "onLanguage:slim",
+    "onCustomEditor:slimdoc"
   ],
   "contributes": {
     "languages": [
@@ -83,10 +84,14 @@
     "prepublish": "npm run compile"
   },
   "devDependencies": {
-    "typescript": "^5.8.2"
+    "@types/node": "^16.18.126",
+    "@types/vscode": "^1.98.0",
+    "typescript": "^5.8.2",
+    "vscode-test": "^1.6.1"
   },
   "dependencies": {
-    "vscode-languageclient": "^8.0.0",
+    "vscode-languageclient": "^8.1.0",
+    "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12"
   },
   "files": [

@@ -12,15 +12,15 @@ const fs = require('fs');
 const path = require('path');
 
 // Load SLiM function data from JSON file
-const functionsPath = path.join(__dirname, 'slim_functions.json');
-const eidosFunctionsPath = path.join(__dirname, 'eidos_functions.json');
+const functionDocsPath = path.join(__dirname, '..', 'docs', 'slim_function_docs.json');
 
 let functionsData = {};
-if (fs.existsSync(functionsPath)) {
-  functionsData = JSON.parse(fs.readFileSync(functionsPath, 'utf8'));
-}
-if (fs.existsSync(eidosFunctionsPath)) {
-    Object.assign(functionsData, JSON.parse(fs.readFileSync(eidosFunctionsPath, 'utf8')));
+if (fs.existsSync(functionDocsPath)) {
+  functionsData = JSON.parse(fs.readFileSync(functionDocsPath, 'utf8'));
+  console.log('✅ Server loaded function documentation successfully.');
+  console.log('Server loaded functions:', Object.keys(functionsData));
+} else {
+  console.error('❌ ERROR: slim_function_docs.json not found in server!');
 }
 
 documents.listen(connection);
@@ -33,12 +33,11 @@ connection.onInitialize(() => {
         resolveProvider: true
       },
       hoverProvider: true,
-      definitionProvider: true,
       referencesProvider: true,
-      documentSymbolProvider: true, // Ensures document symbols are handled
+      documentSymbolProvider: true,
       documentFormattingProvider: true,
       signatureHelpProvider: {   
-          triggerCharacters: ["(", ",", " "],  // Adding space for better trigger detection
+          triggerCharacters: ["(", ",", " "],
           retriggerCharacters: [",", ")"]
       }
     }
@@ -113,13 +112,14 @@ connection.onHover((params) => {
     const word = getWordAtPosition(text, position);
 
     if (functionsData[word]) {
-      return {
-          contents: {
-              kind: "markdown",
-              value: functionsData[word]
-          }
-    };    
-  }
+        const functionInfo = functionsData[word];
+        return {
+            contents: {
+                kind: "markdown",
+                value: `**${word}**\n\`\`\`slim\n${functionInfo.signature}\n\`\`\`\n\n${functionInfo.description}`
+            }
+        };
+    }
 
     return null;
 });
@@ -159,13 +159,20 @@ connection.onCompletion((params) => {
     const completions = [];
 
     for (const funcName in functionsData) {
+        const functionInfo = functionsData[funcName];
         completions.push({
             label: funcName,
             kind: 3, // Function completion
-            detail: functionsData[funcName].split("\n")[1].replace("```slim", "").trim(), // Function signature
+            detail: functionInfo.signature,
             documentation: {
                 kind: "markdown",
-                value: functionsData[funcName]
+                value: `**${funcName}**\n\n\`\`\`slim\n${functionInfo.signature}\n\`\`\`\n\n${functionInfo.description}`
+            },
+            // Add command data to show documentation
+            command: {
+                title: 'Show Documentation',
+                command: 'slimTools.showFunctionDoc',
+                arguments: [funcName]
             }
         });
     }
@@ -173,11 +180,13 @@ connection.onCompletion((params) => {
     return completions;
 });
 
+// This resolves additional information for a completion item
 connection.onCompletionResolve((item) => {
     if (functionsData[item.label]) {
+        const functionInfo = functionsData[item.label];
         item.documentation = {
             kind: "markdown",
-            value: functionsData[item.label]
+            value: `**${item.label}**\n\n\`\`\`slim\n${functionInfo.signature}\n\`\`\`\n\n${functionInfo.description}`
         };
     }
     return item;
@@ -195,29 +204,22 @@ connection.onSignatureHelp((params) => {
     console.log("Signature Help Triggered for:", word);
 
     if (functionsData[word]) {
-        // Extract function signature more reliably
-        const signatureMarkdown = functionsData[word];
-        const signatureLines = signatureMarkdown.split("\n");
+        const functionInfo = functionsData[word];
+        const signature = functionInfo.signature;
         
-        // Find the function signature line (should be within first few lines)
-        let firstLine = signatureLines.find(line => line.startsWith("```slim"));
-        if (!firstLine) return null;
-
-        firstLine = firstLine.replace("```slim", "").trim(); // Remove markdown code block
-
-        // Extract parameters
-        const paramList = firstLine.match(/\((.*?)\)/); // Get content inside parentheses
+        // Extract parameters from signature
+        const paramList = signature.match(/\((.*?)\)/);
         const parameters = paramList ? paramList[1].split(",").map(p => p.trim()) : [];
 
         return {
             signatures: [
                 {
-                    label: firstLine,  // Show function signature
+                    label: signature,
                     documentation: {
                         kind: "markdown",
-                        value: signatureMarkdown
+                        value: `${functionInfo.signature}\n\n${functionInfo.description}`
                     },
-                    parameters: parameters.map(param => ({ label: param })) // Format parameters
+                    parameters: parameters.map(param => ({ label: param }))
                 }
             ],
             activeSignature: 0,
@@ -228,5 +230,39 @@ connection.onSignatureHelp((params) => {
     return null;
 });
 
+// Add this handler for references
+connection.onReferences((params) => {
+    // Just return an empty array for now
+    return [];
+});
+
+// Disable GoTo Definition by removing the definition handler
+// connection.onDefinition((params) => {
+//     const document = documents.get(params.textDocument.uri);
+//     if (!document) return null;
+//
+//     const position = params.position;
+//     const text = document.getText();
+//     const word = getWordAtPosition(text, position);
+//
+//     console.log(`🔍 Server looking for definition of: ${word}`);
+//     console.log(`Function exists in server: ${!!functionsData[word]}`);
+//
+//     if (functionsData[word]) {
+//         // Previously, we would send a notification and return a dummy location...
+//         connection.sendNotification('custom/showFunctionDoc', { functionName: word });
+//         console.log(`Sent custom notification for: ${word}`);
+//         
+//         return {
+//             uri: document.uri,
+//             range: {
+//                 start: position,
+//                 end: position
+//             }
+//         };
+//     }
+//
+//     return null;
+// });
 
 connection.listen();
