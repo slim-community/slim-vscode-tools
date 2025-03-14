@@ -85,11 +85,12 @@
     "preclean": "npm run clean",
     "prepublish": "npm run compile",
     "package": "vsce package",
-    "prepublishOnly": "npm run preclean && npm run compile"
+    "prepublishOnly": "rimraf out dist coverage node_modules && npm cache clean --force"
   },
   "devDependencies": {
     "@types/node": "^16.18.126",
     "@types/vscode": "^1.96.0",
+    "rimraf": "^6.0.1",
     "typescript": "^5.8.2",
     "vscode-test": "^1.6.1"
   },
@@ -97,10 +98,5 @@
     "vscode-languageclient": "^8.1.0",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12"
-  },
-  "files": [
-    "server/",
-    "server/slim_functions.json",
-    "server/eidos_functions.json"
-  ]
+  }
 }
