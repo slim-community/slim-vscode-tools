@@ -14,6 +14,21 @@ Provides syntax highlighting for SLiM scripts using a TextMate grammar. This inc
 - Language variables (`this`, `self`)
 - Function definitions and parameters
 
+![Syntax Highlighting](./images/syntax_colors.png)
+
+### Hover Information
+
+Will show a tooltip with the function signature and complete documentation for the function for the SLiM manual.
+
+![Hover Information](./images/hover_over_docs.png)
+
+### Auto-completion
+
+Provides auto-completion for SLiM keywords, functions, and variables.
+Will show a tooltip with the function signature and description.
+
+![Auto-completion](./images/autocomplete.png)
+
 ### Syntax Checking
 Provides real-time syntax validation for SLiM scripts:
 - Brace matching and block structure validation
@@ -38,6 +53,9 @@ Adds a custom view in the activity bar with a command to run SLiM scripts:
 
 ### Status Bar Integration
 Adds a status bar button to quickly run the SLiM script in the active editor.
+Also adds a command to run the SLiM script in Activity Bar.
+
+![Status Bar Integration](./images/run_slim.png)
 
 ## Requirements
 
