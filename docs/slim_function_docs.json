@@ -1,126 +1,1065 @@
 {
+    "// === Chromosome Class Functions ===": {},
+    "ancestralNucleotides": {
+        "signature": "(is)ancestralNucleotides([Ni$ start = NULL], [Ni$ end = NULL], [string$ format = \"string\"])",
+        "description": "Returns the ancestral nucleotide sequence originally supplied to initializeAncestralNucleotides(), including any sequence changes due to nucleotide mutations that have fixed and substituted. This nucleotide sequence is the reference sequence for positions in a genome that do not contain a nucleotide-based mutation. The range of the returned sequence may be constrained by a start position given in start and/or an end position given in end; nucleotides will be returned from start to end, inclusive. The format of the returned sequence is controlled by the format parameter. Supported formats include \"string\" (single sequence string), \"char\" (string vector per nucleotide), \"integer\" (integer vector with values A=0, C=1, G=2, T=3), and \"codon\" (integer values from 0 to 63 based on nucleotide triplets)."
+    },
+    "drawBreakpoints": {
+        "signature": "(integer)drawBreakpoints([No<Individual>$ parent = NULL], [Ni$ n = NULL])",
+        "description": "Draw recombination breakpoints using the chromosome's recombination rate map, gene conversion parameters, and applicable recombination() callbacks. The number of breakpoints, n, may be specified; if NULL, it is determined by the recombination rate and chromosome length. If using separate recombination maps for males and females, parent must be provided to select the correct map. If recombination() callbacks are enabled, parent is used to determine pseudo-parameters passed to those callbacks."
+    },
+    "genomicElementForPosition": {
+        "signature": "(object<GenomicElement>)genomicElementForPosition(integer positions)",
+        "description": "Returns a vector of GenomicElement objects corresponding to the given base positions along the chromosome. If every position falls within a defined genomic element, the returned vector maintains a one-to-one correspondence with positions. Otherwise, positions that do not fall within genomic elements are excluded from the result."
+    },
+    "hasGenomicElementForPosition": {
+        "signature": "(logical)hasGenomicElementForPosition(integer positions)",
+        "description": "Returns a logical vector corresponding to the provided base positions along the chromosome. Each position is marked as T if inside a genomic element, or F if outside. Use genomicElementForPosition() to retrieve the actual GenomicElement objects."
+    },
+    "setAncestralNucleotides": {
+        "signature": "(integer$)setAncestralNucleotides(is sequence)",
+        "description": "Replaces the ancestral nucleotide sequence for the model. The sequence parameter is interpreted exactly as in initializeAncestralSequence(). The new sequence length is returned. Replacing the ancestral sequence in a running simulation is uncommon, as it affects segregating and fixed mutations. It can be useful when resetting the simulation state with readFromMS() or readFromVCF()."
+    },
+    "setGeneConversion": {
+        "signature": "(void)setGeneConversion(numeric$ nonCrossoverFraction, numeric$ meanLength, numeric$ simpleConversionFraction, [numeric$ bias = 0])",
+        "description": "Switches the recombination model to the \"double-stranded break (DSB)\" model and configures the details of gene conversion tracts. The parameter meanings mirror those of the initializeGeneConversion() function."
+    },
+    "setHotspotMap": {
+        "signature": "(void)setHotspotMap(numeric multipliers, [Ni ends = NULL], [string$ sex = \"*\"])",
+        "description": "In nucleotide-based models, sets the mutation rate multiplier along the chromosome. If ends is NULL, a single multiplier applies to the entire chromosome. If ends is supplied, multipliers and ends must be of equal length and define successive contiguous stretches. Sex-specific hotspot maps are supported when specified at initialization."
+    },
+    "setMutationRate": {
+        "signature": "(void)setMutationRate(numeric rates, [Ni ends = NULL], [string$ sex = \"*\"])",
+        "description": "Sets the mutation rate per base position per gamete. If ends is NULL, a single mutation rate applies to the entire chromosome. If ends is supplied, rates and ends define successive contiguous stretches. Sex-specific mutation rates are supported if enabled at initialization."
+    },
+    "setRecombinationRate": {
+        "signature": "(void)setRecombinationRate(numeric rates, [Ni ends = NULL], [string$ sex = \"*\"])",
+        "description": "Set the recombination rate per base position per gamete. All rates must be in the interval [0.0, 0.5]. If ends is NULL, then rates must be a singleton value that specifies a single recombination rate to be used along the entire chromosome. If ends is supplied, then rates and ends must be the same length, and the values in ends must be specified in ascending order. In that case, rates and ends taken together specify the recombination rates to be used along successive contiguous stretches of the chromosome, from beginning to end; the last position specified in ends should extend to the end of the chromosome. If sex is \"*\" (the default), then the supplied recombination rate map will be used for both sexes (which is the only option for hermaphroditic simulations). In sexual simulations sex may be \"M\" or \"F\" instead, in which case the supplied recombination map is used only for that sex. Note that whether sex-specific recombination maps will be used is set by the way that the simulation is initially configured with initializeRecombinationRate(), and cannot be changed with this method."
+    },
+    "// === Community Class Functions ===": {},
+    "createLogFile": {
+        "signature": "(object<LogFile>$)createLogFile(string$ filePath, [Ns initialContents = NULL], [logical$ append = F], [logical$ compress = F], [string$ sep = \",\"], [Ni$ logInterval = NULL], [Ni$ flushInterval = NULL])",
+        "description": "Creates and returns a new LogFile object that logs data from the simulation. Data is written to filePath, with optional initialContents written before the header. If append is T, appends to existing file. If compress is T, compresses with zlib. The sep parameter specifies the separator between values (default comma for CSV). Automatic logging occurs every logInterval ticks if specified. With compression, flushInterval controls buffer flushing frequency."
+    },
+    "estimatedLastTick": {
+        "signature": "(integer$)estimatedLastTick()",
+        "description": "Returns SLiM's current estimate of the last tick in which the model will execute. This is only an estimate and may change as script blocks are added, removed, or rescheduled."
+    },
+    "deregisterScriptBlock": {
+        "signature": "(void)deregisterScriptBlock(io<SLiMEidosBlock> scriptBlocks)",
+        "description": "Schedules specified script blocks for deregistration. Blocks remain valid until after current script block completes. Use block's active property to prevent immediate execution."
+    },
+    "genomicElementTypesWithIDs": {
+        "signature": "(object<GenomicElementType>)genomicElementTypesWithIDs(integer ids)",
+        "description": "Returns GenomicElementType objects matching the specified IDs. Errors if any ID is not found."
+    },
+    "interactionTypesWithIDs": {
+        "signature": "(object<InteractionType>)interactionTypesWithIDs(integer ids)",
+        "description": "Returns InteractionType objects matching the specified IDs. Errors if any ID is not found."
+    },
+    "mutationTypesWithIDs": {
+        "signature": "(object<MutationType>)mutationTypesWithIDs(integer ids)",
+        "description": "Returns MutationType objects matching the specified IDs. Errors if any ID is not found."
+    },
+    "outputUsage": {
+        "signature": "(void)outputUsage()",
+        "description": "Outputs current memory usage details to Eidos's output stream. Shows where memory is predominantly used, useful for debugging and optimization."
+    },
+    "registerEarlyEvent": {
+        "signature": "(object<SLiMEidosBlock>$)registerEarlyEvent(Nis$ id, string$ source, [Ni$ start = NULL], [Ni$ end = NULL], [No<Species>$ ticksSpec = NULL])",
+        "description": "Registers an early() event with given source code and optional start/end ticks. Returns the new SLiMEidosBlock object. The block is active immediately and may execute in current tick."
+    },
+    "registerFirstEvent": {
+        "signature": "(object<SLiMEidosBlock>$)registerFirstEvent(Nis$ id, string$ source, [Ni$ start = NULL], [Ni$ end = NULL], [No<Species>$ ticksSpec = NULL])",
+        "description": "Registers a first() event with given source code and optional start/end ticks. Returns the new SLiMEidosBlock object. The block is active immediately and may execute in current tick."
+    },
+    "registerInteractionCallback": {
+        "signature": "(object<SLiMEidosBlock>$)registerInteractionCallback(Nis$ id, string$ source, io<InteractionType>$ intType, [Nio<Subpopulation>$ subpop = NULL], [Ni$ start = NULL], [Ni$ end = NULL])",
+        "description": "Registers an interaction() callback for specified interaction type and optional subpopulation. Returns the new SLiMEidosBlock object. Active immediately for next interaction evaluation."
+    },
+    "registerLateEvent": {
+        "signature": "(object<SLiMEidosBlock>$)registerLateEvent(Nis$ id, string$ source, [Ni$ start = NULL], [Ni$ end = NULL], [No<Species>$ ticksSpec = NULL])",
+        "description": "Registers a late() event with given source code and optional start/end ticks. Returns the new SLiMEidosBlock object. The block is active immediately and may execute in current tick."
+    },
+    "rescheduleScriptBlock": {
+        "signature": "(object<SLiMEidosBlock>$)rescheduleScriptBlock(io<SLiMEidosBlock>$ block, [Ni$ start = NULL], [Ni$ end = NULL], [Ni ticks = NULL])",
+        "description": "Reschedules a script block to execute in specified ticks. Can use start/end range or explicit tick list. Block may still execute in current tick cycle if previously scheduled."
+    },
+    "scriptBlocksWithIDs": {
+        "signature": "(object<SLiMEidosBlock>)scriptBlocksWithIDs(integer ids)",
+        "description": "Returns SLiMEidosBlock objects matching the specified IDs. Errors if any ID is not found."
+    },
+    "simulationFinished": {
+        "signature": "(void)simulationFinished()",
+        "description": "Declares the current simulation finished at the end of current tick. Use stop() for immediate termination."
+    },
+    "speciesWithIDs": {
+        "signature": "(object<Species>)speciesWithIDs(integer ids)",
+        "description": "Returns Species objects matching the specified IDs. Errors if any ID is not found."
+    },
+    "subpopulationsWithIDs": {
+        "signature": "(object<Subpopulation>)subpopulationsWithIDs(integer ids)",
+        "description": "Returns Subpopulation objects matching the specified IDs. Errors if any ID is not found."
+    },
+    "subpopulationsWithNames": {
+        "signature": "(object<Subpopulation>)subpopulationsWithNames(string names)",
+        "description": "Returns a vector of Subpopulation objects with the specified names. The names parameter should be a vector of strings matching the names of existing subpopulations."
+    },
+    "usage": {
+        "signature": "(float$)usage()",
+        "description": "Returns current memory usage of the simulation. Useful for debugging and optimization. Shows SLiM and Eidos direct memory usage, not total process memory."
+    },
+    
+    "// === Genome Class Functions ===": {},
+    "addMutations": {
+        "signature": "(void)addMutations(object<Mutation> mutations)",
+        "description": "Add the existing mutations in mutations to the genome, if they are not already present (if they are already present, they will be ignored), and if the addition is not prevented by the mutation stacking policy (see the mutationStackPolicy property of MutationType). Calling this will normally affect the fitness values calculated toward the end of the current tick; if you want current fitness values to be affected, you can call the Species method recalculateFitness() – but see the documentation of that method for caveats. Note that in nonWF models that use tree-sequence recording, mutations cannot be added to an individual after the tick in which the individual is created (i.e., when the age of the individual is greater than 0), to prevent the possibility of inconsistencies in the recorded tree sequence."
+    },
+    "addNewDrawnMutation": {
+        "signature": "(object<Mutation>)addNewDrawnMutation(io<MutationType> mutationType, integer position, [Nio<Subpopulation> originSubpop = NULL], [Nis nucleotide = NULL])",
+        "description": "Add new mutations to the target genome(s) with the specified mutationType (specified by the MutationType object or by integer identifier), position, and originSubpop (specified by the Subpopulation object or by integer identifier, or by NULL, the default, to specify the subpopulation to which the first target genome belongs). If originSubpop is supplied as an integer, it is intentionally not checked for validity; you may use arbitrary values of originSubpop to 'tag' the mutations that you create. The selection coefficients of the mutations are drawn from their mutation types; addNewMutation() may be used instead if you wish to specify selection coefficients. In non-nucleotide-based models, mutationType will always be a non-nucleotide-based mutation type, and so nucleotide must be NULL (the default). In a nucleotide-based model, mutationType might still be non-nucleotide-based (in which case nucleotide must still be NULL), or mutationType might be nucleotide-based, in which case a non-NULL value must be supplied for nucleotide. The new mutations created by this method are returned, even if their actual addition is prevented by the mutation stacking policy."
+    },
+    "addNewMutation": {
+        "signature": "(object<Mutation>)addNewMutation(io<MutationType> mutationType, numeric selectionCoeff, integer position, [Nio<Subpopulation> originSubpop = NULL], [Nis nucleotide = NULL])",
+        "description": "Add new mutations to the target genome(s) with the specified mutationType (specified by the MutationType object or by integer identifier), selectionCoeff, position, and originSubpop (specified by the Subpopulation object or by integer identifier, or by NULL, the default, to specify the subpopulation to which the first target genome belongs). If originSubpop is supplied as an integer, it is intentionally not checked for validity; you may use arbitrary values of originSubpop to 'tag' the mutations that you create. The addNewDrawnMutation() method may be used instead if you wish selection coefficients to be drawn from the mutation types of the mutations."
+    },
+    "containsMarkerMutation": {
+        "signature": "(Nlo<Mutation>$)containsMarkerMutation(io<MutationType>$ mutType, integer$ position, [logical$ returnMutation = F])",
+        "description": "Returns T if the genome contains a mutation of type mutType at position, F otherwise (if returnMutation has its default value of F; see below). This method is intended for checking for 'marker mutations': mutations of a special mutation type that are not literally mutations in the usual sense, but instead are added in to particular genomes to mark them as possessing some property."
+    },
+    "containsMutations": {
+        "signature": "(logical)containsMutations(object<Mutation> mutations)",
+        "description": "Returns a logical vector indicating whether each of the mutations in mutations is present in the genome; each element in the returned vector indicates whether the corresponding mutation is present (T) or absent (F). This method is provided for speed; it is much faster than the corresponding Eidos code."
+    },
+    "countOfMutationsOfType": {
+        "signature": "(integer$)countOfMutationsOfType(io<MutationType>$ mutType)",
+        "description": "Returns the number of mutations that are of the type specified by mutType, out of all of the mutations in the genome. If you need a vector of the matching Mutation objects, rather than just a count, use -mutationsOfType(). This method is provided for speed; it is much faster than the corresponding Eidos code."
+    },
+    "mutationCountsInGenomes": {
+        "signature": "(integer)mutationCountsInGenomes([No<Mutation> mutations = NULL])",
+        "description": "Return an integer vector with the frequency counts of all of the Mutation objects passed in mutations, within the target Genome vector. If the optional mutations argument is NULL (the default), frequency counts will be returned for all of the active Mutation objects in the simulation."
+    },
+    "mutationFrequenciesInGenomes": {
+        "signature": "(float)mutationFrequenciesInGenomes([No<Mutation> mutations = NULL])",
+        "description": "Return a float vector with the frequencies of all of the Mutation objects passed in mutations, within the target Genome vector. If the optional mutations argument is NULL (the default), frequencies will be returned for all of the active Mutation objects in the simulation."
+    },
+    "mutationsOfType": {
+        "signature": "(object<Mutation>)mutationsOfType(io<MutationType>$ mutType)",
+        "description": "Returns an object vector of all the mutations that are of the type specified by mutType, out of all of the mutations in the genome. If you just need a count of the matching Mutation objects, rather than a vector of the matches, use -countOfMutationsOfType()."
+    },
+    "nucleotides": {
+        "signature": "(is)nucleotides([Ni$ start = NULL], [Ni$ end = NULL], [string$ format = \"string\"])",
+        "description": "Returns the nucleotide sequence for the genome. This is the current ancestral sequence, as would be returned by the Chromosome method ancestralNucleotides(), with the nucleotides for any nucleotide-based mutations in the genome overlaid."
+    },
+    "output": {
+        "signature": "(void)output([Ns$ filePath = NULL], [logical$ append = F])",
+        "description": "Output the target genomes in SLiM's native format. This low-level output method may be used to output any sample of Genome objects."
+    },
+    "outputMS": {
+        "signature": "(void)outputMS([Ns$ filePath = NULL], [logical$ append = F], [logical$ filterMonomorphic = F])",
+        "description": "Output the target genomes in MS format. This low-level output method may be used to output any sample of Genome objects."
+    },
+    "outputVCF": {
+        "signature": "(void)outputVCF([Ns$ filePath = NULL], [logical$ outputMultiallelics = T], [logical$ append = F], [logical$ simplifyNucleotides = F], [logical$ outputNonnucleotides = T])",
+        "description": "Output the target genomes in VCF format. The target genomes are treated as pairs comprising individuals for purposes of structuring the VCF output, so an even number of genomes is required."
+    },
+    "positionsOfMutationsOfType": {
+        "signature": "(integer)positionsOfMutationsOfType(io<MutationType>$ mutType)",
+        "description": "Returns the positions of mutations that are of the type specified by mutType, out of all of the mutations in the genome. If you need a vector of the matching Mutation objects, rather than just positions, use -mutationsOfType()."
+    },
+    "readFromMS": {
+        "signature": "(object<Mutation>)readFromMS(string$ filePath, io<MutationType>$ mutationType)",
+        "description": "Read new mutations from the MS format file at filePath and add them to the target genomes. The number of target genomes must match the number of genomes represented in the MS file."
+    },
+    "readFromVCF": {
+        "signature": "(object<Mutation>)readFromVCF(string$ filePath, [Nio<MutationType>$ mutationType = NULL])",
+        "description": "Read new mutations from the VCF format file at filePath and add them to the target genomes. The number of target genomes must match the number of genomes represented in the VCF file."
+    },
+    "removeMutations": {
+        "signature": "(void)removeMutations([No<Mutation> mutations = NULL], [logical$ substitute = F])",
+        "description": "Remove the mutations in mutations from the target genome(s), if they are present (if they are not present, they will be ignored). If NULL is passed for mutations (which is the default), then all mutations will be removed from the target genomes."
+    },
+    "sumOfMutationsOfType": {
+        "signature": "(float$)sumOfMutationsOfType(io<MutationType>$ mutType)",
+        "description": "Returns the sum of the selection coefficients of all mutations that are of the type specified by mutType, out of all of the mutations in the genome. This is often useful in models that use a particular mutation type to represent QTLs with additive effects."
+    },
+    "// === GenomicElement Class Functions ===": {},
+    "setGenomicElementType": {
+        "signature": "(void)setGenomicElementType(io<GenomicElementType>$ genomicElementType)}",
+        "description": "Set the genomic element type used for a genomic element.  The genomicElementType parameter should supply the new genomic element type for the element, either as a GenomicElementType object or as an integer identifier.  The genomic element type for a genomic element is normally a constant in simulations, so be sure you know what you are doing."
+    },
+
+    "// === GenomicElementType Class Functions ===": {},
+    "setMutationFractions": {
+        "signature": "(void)setMutationFractions(io<MutationType> mutationTypes, numeric proportions)",
+        "description":"Set the mutation type fractions contributing to a genomic element type.  The mutationTypes vector should supply the mutation types used by the genomic element (either as MutationType objects or as integer identifiers), and the proportions vector should be of equal length, specifying the relative proportion of mutations that will be drawn from each corresponding type.  This is normally a constant in simulations, so be sure you know what you are doing."
+    },
+    "setMutationMatrix": {
+        "signature": "(void)setMutationMatrix(float mutationMatrix)",
+        "description":"Sets a new nucleotide mutation matrix for the genomic element type.  This replaces the mutation matrix originally set by initializeGenomicElementType().  This method may only be called in nucleotide-based models."
+    },
+
+    "// === Individual Class Functions ===": {},
+
+ 
+    "relatedness": {
+        "signature": "(float)relatedness(object<Individual> individuals)",
+        "description": "Returns a vector containing the degrees of relatedness between the receiver and each of the individuals in individuals. The relatedness between A and B is always 1.0 if A and B are actually the same individual. If pedigree tracking is turned on with initializeSLiMOptions(keepPedigrees=T), this method will use the pedigree information to construct a relatedness estimate. More specifically, this method uses all available pedigree information from the grandparental and parental pedigree records of A and B to compute an estimate of the degree of consanguinity between A and B. Siblings have a relatedness of 0.5, as do parents to their children and vice versa; cousins have a relatedness of 0.125; and so forth."
+    },
+    "setSpatialPosition": {
+        "signature": "(void)setSpatialPosition(float position)",
+        "description": "Sets the spatial position of the individual (as accessed through the spatialPosition property). The length of position depends upon the spatial dimensionality declared with initializeSLiMOptions(). If the spatial dimensionality is zero (as it is by default), it is an error to call this method. The elements of position are set into the values of the x, y, and z properties (if those properties are encompassed by the spatial dimensionality of the simulation)."
+    },
+    "sharedParentCount": {
+        "signature": "(integer)sharedParentCount(object<Individual> individuals)",
+        "description": "Returns a vector containing the number of parents shared between the receiver and each of the individuals in individuals. The number of shared parents between A and B is always 2 if A and B are actually the same individual. If pedigree tracking is turned on with initializeSLiMOptions(keepPedigrees=T), this method will use the pedigree information to construct a relatedness estimate. More specifically, this method uses the parental pedigree IDs to count the number of shared parents between them, such that full siblings have a count of 2, and half siblings have a count of 1."
+    },
+
+    "uniqueMutationsOfType": {
+        "signature": "(object<Mutation>)uniqueMutationsOfType(io<MutationType>$ mutType)",
+        "description": "Returns an object vector of all the mutations that are of the type specified by mutType, out of all of the mutations in the individual. Mutations present in both genomes will occur only once in the result of this method, and the mutations will be given in sorted order by position. If you just need a count of the matching Mutation objects, rather than a vector of the matches, use -countOfMutationsOfType(). This method is provided for speed; it is much faster than the corresponding Eidos code."
+    },
+
+
+    "// === InteractionType Class Functions ===": {},
+
+    "clippedIntegral": {
+        "signature": "(float)clippedIntegral(No<Individual> receivers)",
+        "description": "Returns a vector containing the integral of the interaction function as experienced by each of the individuals in receivers. For each given individual, the interaction function is clipped to the edges of the spatial bounds of the subpopulation that individual inhabits. The interaction function is also clipped to the interaction's maximum distance. The evaluate() method must have been previously called for the receiver subpopulation."
+    },
+    "distance": {
+        "signature": "(float)distance(object<Individual>$ receiver, [No<Individual> exerters = NULL])",
+        "description": "Returns a vector containing distances between receiver and the individuals in exerters. If exerters is NULL (the default), then a vector of the distances from receiver to all individuals in its subpopulation (including itself) is returned. The evaluate() method must have been previously called for the receiver and exerter subpopulations."
+    },
+    "distanceFromPoint": {
+        "signature": "(float)distanceFromPoint(float point, object<Individual> exerters)",
+        "description": "Returns a vector containing distances between the point given by the spatial coordinates in point, which may be thought of as the 'receiver', and individuals in exerters. The point vector is interpreted as providing coordinates precisely as specified by the spatiality of the interaction type."
+    },
+    "drawByStrength": {
+        "signature": "(object)drawByStrength(object<Individual> receiver, [integer$ count = 1], [No<Subpopulation>$ exerterSubpop = NULL], [logical$ returnDict = F])",
+        "description": "Returns an object<Individual> vector containing up to count individuals drawn from exerterSubpop, or if that is NULL (the default), then from the subpopulation of receiver. The probability of drawing particular individuals is proportional to the strength of interaction they exert upon receiver."
+    },
+    "evaluate": {
+        "signature": "(void)evaluate(io<Subpopulation> subpops)",
+        "description": "Snapshots model state in preparation for the use of the interaction, for the receiver and exerter subpopulations specified by subpops. The subpopulations may be supplied either as integer IDs, or as Subpopulation objects."
+    },
+    "interactingNeighborCount": {
+        "signature": "(integer)interactingNeighborCount(object<Individual> receivers, [No<Subpopulation>$ exerterSubpop = NULL])",
+        "description": "Returns the number of interacting individuals for each individual in receivers, within the maximum interaction distance according to the distance metric of the InteractionType, from among the exerters in exerterSubpop."
+    },
+    "interactionDistance": {
+        "signature": "(float)interactionDistance(object<Individual>$ receiver, [No<Individual> exerters = NULL])",
+        "description": "Returns a vector containing interaction-dependent distances between receiver and individuals in exerters. If exerters is NULL (the default), then a vector of the interaction-dependent distances from receiver to all individuals in its subpopulation (including receiver itself) is returned."
+    },
+    "localPopulationDensity": {
+        "signature": "(float)localPopulationDensity(object<Individual> receivers, [No<Subpopulation>$ exerterSubpop = NULL])",
+        "description": "Returns a vector of the local population density present at the location of each individual in receivers. Population density is estimated using interaction strengths, effectively doing a kernel density estimate using the interaction function as the kernel."
+    },
+    "nearestInteractingNeighbors": {
+        "signature": "(object)nearestInteractingNeighbors(object<Individual> receiver, [integer$ count = 1], [No<Subpopulation>$ exerterSubpop = NULL], [logical$ returnDict = F])",
+        "description": "Returns an object<Individual> vector containing up to count interacting individuals that are spatially closest to receiver, according to the distance metric of the InteractionType, from among the exerters in exerterSubpop."
+    },
+    "nearestNeighbors": {
+        "signature": "(object)nearestNeighbors(object<Individual> receiver, [integer$ count = 1], [No<Subpopulation>$ exerterSubpop = NULL], [logical$ returnDict = F])",
+        "description": "Returns an object<Individual> vector containing up to count individuals that are spatially closest to receiver, according to the distance metric of the InteractionType, from among the exerters in exerterSubpop."
+    },
+    "nearestNeighborsOfPoint": {
+        "signature": "(object<Individual>)nearestNeighborsOfPoint(float point, io<Subpopulation>$ exerterSubpop, [integer$ count = 1])",
+        "description": "Returns up to count individuals in exerterSubpop that are spatially closest to point, according to the distance metric of the InteractionType."
+    },
+    "neighborCount": {
+        "signature": "(integer)neighborCount(object<Individual> receivers, [No<Subpopulation>$ exerterSubpop = NULL])",
+        "description": "Returns the number of neighbors for each individual in receivers, within the maximum interaction distance according to the distance metric of the InteractionType, from among the individuals in exerterSubpop."
+    },
+    "neighborCountOfPoint": {
+        "signature": "(integer$)neighborCountOfPoint(float point, io<Subpopulation>$ exerterSubpop)",
+        "description": "Returns the number of individuals in exerterSubpop that are within the maximum interaction distance according to the distance metric of the InteractionType."
+    },
+    "setConstraints": {
+        "signature": "(void)setConstraints(string$ who, [Ns$ sex = NULL], [Ni$ tag = NULL], [Ni$ minAge = NULL], [Ni$ maxAge = NULL], [Nl$ migrant = NULL], [Nl$ tagL0 = NULL], [Nl$ tagL1 = NULL], [Nl$ tagL2 = NULL], [Nl$ tagL3 = NULL], [Nl$ tagL4 = NULL])",
+        "description": "Sets constraints upon which individuals can be receivers and/or exerters, making the target InteractionType measure interactions between only subsets of the population."
+    },
+    "setInteractionFunction": {
+        "signature": "(void)setInteractionFunction(string$ functionType, ...)",
+        "description": "Set the function used to translate spatial distances into interaction strengths for an interaction type. The functionType may be 'f', 'l', 'e', 'n', 'c', or 't', each with their own parameters."
+    },
+    "strength": {
+        "signature": "(float)strength(object<Individual>$ receiver, [No<Individual> exerters = NULL])",
+        "description": "Returns a vector containing the interaction strengths exerted upon receiver by the individuals in exerters. If exerters is NULL, then returns strengths from all individuals in receiver's subpopulation."
+    },
+    "testConstraints": {
+        "signature": "(lo<Individual>)testConstraints(object<Individual> individuals, string$ constraints, [logical$ returnIndividuals = F])",
+        "description": "Tests the individuals against the interaction constraints specified by constraints. The value of constraints may be 'receiver' to use the receiver constraints, or 'exerter' to use the exerter constraints."
+    },
+    "totalOfNeighborStrengths": {
+        "signature": "(float)totalOfNeighborStrengths(object<Individual> receivers, [No<Subpopulation>$ exerterSubpop = NULL])",
+        "description": "Returns a vector of the total interaction strength felt by each individual in receivers by the exerters in exerterSubpop. All receivers must belong to a single subpopulation."
+    },
+    "unevaluate": {
+        "signature": "(void)unevaluate(void)",
+        "description": "Discards all evaluation of this interaction, for all subpopulations. The state of the InteractionType is reset to a state prior to evaluation."
+    },
+
+
+    "// === LogFile Class Functions ===": {},
+
+
+    "addCustomColumn": {
+        "signature": "(void)addCustomColumn(string$ columnName, string$ source, [* context = NULL])",
+        "description": "Adds a new data column with its name provided by columnName. The new column will be logged each time that a row is generated. The value for the column will be produced by the code supplied in source, which should return either NULL or a singleton value of any non-object type."
+    },
+    "addCycle": {
+        "signature": "(void)addCycle([No<Species>$ species = NULL])",
+        "description": "Adds a new data column that provides the cycle counter for species. The column will be named cycle in single-species models; an underscore and the name of the species will be appended in multispecies models."
+    },
+    "addCycleStage": {
+        "signature": "(void)addCycleStage(void)",
+        "description": "Adds a new data column that provides the cycle stage, named cycle_stage. The stage is provided as a string, typically 'first', 'early', 'late', or 'end'."
+    },
+    "addKeysAndValuesFrom": {
+        "signature": "(void)addKeysAndValuesFrom(object$ source)",
+        "description": "This Dictionary method has an override in LogFile to make it illegal to call, since LogFile manages its Dictionary entries."
+    },
+    "addMeanSDColumns": {
+        "signature": "(void)addMeanSDColumns(string$ columnName, string$ source, [* context = NULL])",
+        "description": "Adds two new data columns with names of columnName_mean and columnName_sd. The source code should return either a zero-length vector (resulting in NA) or a non-zero-length vector of integer or float values for mean and standard deviation calculation."
+    },
+    "addPopulationSexRatio": {
+        "signature": "(void)addPopulationSexRatio([No<Species>$ species = NULL])",
+        "description": "Adds a new data column that provides the population sex ratio M:(M+F) for species. The column will be named sex_ratio in single-species models; an underscore and species name will be appended in multispecies models."
+    },
+    "addPopulationSize": {
+        "signature": "(void)addPopulationSize([No<Species>$ species = NULL])",
+        "description": "Adds a new data column that provides the total population size for species. The column will be named num_individuals in single-species models; an underscore and species name will be appended in multispecies models."
+    },
+    "addSubpopulationSexRatio": {
+        "signature": "(void)addSubpopulationSexRatio(io<Subpopulation>$ subpop)",
+        "description": "Adds a new data column that provides the sex ratio M:(M+F) of the subpopulation subpop, named pX_sex_ratio. If the subpopulation exists but has size zero, NA will be written."
+    },
+    "addSubpopulationSize": {
+        "signature": "(void)addSubpopulationSize(io<Subpopulation>$ subpop)",
+        "description": "Adds a new data column that provides the size of the subpopulation subpop, named pX_num_individuals. If the subpopulation exists but has size zero, 0 will be written."
+    },
+    "addSuppliedColumn": {
+        "signature": "(void)addSuppliedColumn(string$ columnName)",
+        "description": "Adds a new data column with its name provided by columnName. The value is initially undefined (NA) but can be set using setSuppliedValue() before each row is logged."
+    },
+    "addTick": {
+        "signature": "(void)addTick(void)",
+        "description": "Adds a new data column, named tick, that provides the tick number for the simulation."
+    },
+    "clearKeysAndValues": {
+        "signature": "(void)clearKeysAndValues(void)",
+        "description": "This Dictionary method has an override in LogFile to make it illegal to call, since LogFile manages its Dictionary entries."
+    },
+    "flush": {
+        "signature": "(void)flush(void)",
+        "description": "Flushes all buffered data to the output file, synchronously. Note that frequent flushing may impact performance and file size when compression is enabled."
+    },
+    "logRow": {
+        "signature": "(void)logRow(void)",
+        "description": "Logs a new row of data by evaluating all of the generators added to the LogFile with add...() calls. The new row may be buffered and not written to disk immediately."
+    },
+    "setLogInterval": {
+        "signature": "(void)setLogInterval([Ni$ logInterval = NULL])",
+        "description": "Sets the automatic logging interval. NULL stops automatic logging. Other values request logging every logInterval ticks, starting at the end of the current tick."
+    },
+    "setFilePath": {
+        "signature": "(void)setFilePath(string$ filePath, [Ns initialContents = NULL], [logical$ append = F], [Nl$ compress = NULL], [Ns$ sep = NULL])",
+        "description": "Redirects the LogFile to write new rows to a new filePath. Allows starting a new log file with new settings without creating a new LogFile object."
+    },
+    "setSuppliedValue": {
+        "signature": "(void)setSuppliedValue(string$ columnName, +$ value)",
+        "description": "Registers a value to be used for the supplied column named columnName when a row is next logged. The column must have been added with addSuppliedColumn()."
+    },
+    "setValue": {
+        "signature": "(void)setValue(is$ key, * value)",
+        "description": "This Dictionary method has an override in LogFile to make it illegal to call, since LogFile manages its Dictionary entries."
+    },
+    "willAutolog": {
+        "signature": "(logical$)willAutolog(void)",
+        "description": "Returns whether the LogFile is currently configured to perform automatic logging."
+    },
+
+    "// === Mutation Class Functions ===": {},
+
+
+    "setMutationType": {
+        "signature": "(void)setMutationType(io<MutationType>$ mutType)",
+        "description": "Set the mutation type of the mutation to mutType (which may be specified as either an integer identifier or a MutationType object). This implicitly changes the dominance coefficient of the mutation to that of the new mutation type. The selection coefficient remains unchanged as it is a property of the mutation object itself. In nucleotide-based models, nucleotide-based mutations may not be changed to non-nucleotide-based mutation types and vice versa."
+    },
+    "setSelectionCoeff": {
+        "signature": "(void)setSelectionCoeff(float$ selectionCoeff)",
+        "description": "Set the selection coefficient of the mutation to selectionCoeff. The selection coefficient will be changed for all individuals that possess the mutation, since they all share a single Mutation object. The dominance coefficient remains unchanged as it is determined by the mutation type. Often using a mutationEffect() callback is preferable for modifying selection coefficients in a more controlled fashion."
+    },
+    
+    "// === MutationType Class Functions ===": {},
+    
+    "drawSelectionCoefficient": {
+        "signature": "(float)drawSelectionCoefficient([integer$ n = 1])",
+        "description": "Draws and returns a vector of n selection coefficients using the currently defined distribution of fitness effects (DFE) for the target mutation type. If the DFE is type 's', this method will result in synchronous execution of the DFE's script."
+    },
+    "setDistribution": {
+        "signature": "(void)setDistribution(string$ distributionType, ...)",
+        "description": "Set the distribution of fitness effects for a mutation type. The distributionType may be 'f' (fixed), 'e' (exponential), 'g' (gamma), 'n' (normal), 'p' (Laplace), 'w' (Weibull), or 's' (script). Each type requires specific parameters: 'f' needs fixed selection coefficient; 'e' needs mean; 'g' needs mean and alpha shape; 'n' needs mean and sigma; 'p' needs mean and scale; 'w' needs λ scale and k shape; 's' needs Eidos script. The DFE is normally constant in simulations."
+    },
+
+    "// === Plot Class Functions ===": {},
+
+    
+    "abline": {
+        "signature": "(void)abline([Nif a = NULL], [Nif b = NULL], [Nif h = NULL], [Nif v = NULL], [string color = \"red\"], [numeric lwd = 1.0])",
+        "description": "Adds straight lines to the plot. Three modes: 1) lines specified by intercepts (a) and slopes (b), 2) horizontal lines specified by y-values (h), or 3) vertical lines specified by x-values (v). Modes are mutually exclusive. Lines are drawn in specified colors and widths (color and lwd). Each parameter can be singleton or vector matching line count."
+    },
+    "addLegend": {
+        "signature": "(void)addLegend([Ns$ position = NULL], [Ni$ inset = NULL], [Nif$ labelSize = NULL], [Nif$ lineHeight = NULL], [Nif$ graphicsWidth = NULL], [Nif$ exteriorMargin = NULL], [Nif$ interiorMargin = NULL])",
+        "description": "Adds a legend to the plot. Position can be 'topRight', 'topLeft', 'bottomRight', or 'bottomLeft'. Controls layout with parameters for label size, line height, graphics width, and margins. Legend entries added separately with legendLineEntry(), legendPointEntry(), or legendSwatchEntry()."
+    },
+    "axis": {
+        "signature": "(void)axis(integer$ side, [Nif at = NULL], [ls labels = T])",
+        "description": "Configures plot axis. Side 1 for x-axis (bottom), 2 for y-axis (left). Controls tick positions with 'at' and labels with 'labels' parameter. Labels can be T (numeric positions), F (no labels), or string vector matching 'at' positions."
+    },
+    "legendLineEntry": {
+        "signature": "(void)legendLineEntry(string$ label, [string$ color = \"red\"], [numeric$ lwd = 1.0])",
+        "description": "Adds a line segment legend entry with specified label, color, and line width. Can be combined with other entries of same label for composite legend items."
+    },
+    "legendPointEntry": {
+        "signature": "(void)legendPointEntry(string$ label, [integer$ symbol = 0], [string$ color = \"red\"], [string$ border = \"black\"], [numeric$ lwd = 1.0], [numeric$ size = 1.0])",
+        "description": "Adds a point symbol legend entry with specified label and appearance parameters. Can be combined with other entries of same label for composite legend items."
+    },
+    "legendSwatchEntry": {
+        "signature": "(void)legendSwatchEntry(string$ label, [string$ color = \"red\"])",
+        "description": "Adds a color swatch legend entry with specified label and color. Can be combined with other entries of same label for composite legend items."
+    },
+    "lines": {
+        "signature": "(void)lines(numeric x, numeric y, [string$ color = \"red\"], [numeric$ lwd = 1.0])",
+        "description": "Adds connected line segments to plot using x,y coordinates. Lines drawn in specified color and width. Color and width must be singletons; use multiple calls for varying styles."
+    },
+    "points": {
+        "signature": "(void)points(numeric x, numeric y, [integer symbol = 0], [string color = \"red\"], [string border = \"black\"], [numeric lwd = 1.0], [numeric size = 1.0])",
+        "description": "Adds point symbols to plot at x,y coordinates. Controls appearance with symbol type, colors, line width, and size. Parameters can be singletons or vectors matching point count."
+    },
+    "text": {
+        "signature": "(void)text(numeric x, numeric y, string labels, [string color = \"black\"], [numeric size = 10.0], [Nif adj = NULL])",
+        "description": "Adds text labels to plot at x,y coordinates. Controls appearance with color and font size. Position adjusted with adj parameter for text alignment. Parameters can be singletons or vectors matching label count."
+    },
+    "write": {
+        "signature": "(void)write(string$ filePath)",
+        "description": "Writes the plot to a PDF file at the specified path. Suggested to use .pdf extension. Raises error if file cannot be written."
+    },
+
+    
+    "// === SLiMgui Class Functions ===": {},
+
+    "createPlot": {
+        "signature": "(No<Plot>$)createPlot(string$ title, [Nif xrange = NULL], [Nif yrange = NULL], [string$ xlab = \"x\"], [string$ ylab = \"y\"], [Nif$ width = NULL], [Nif$ height = NULL], [logical$ horizontalGrid = F], [logical$ verticalGrid = F], [logical$ fullBox = T], [numeric$ axisLabelSize = 15], [numeric$ tickLabelSize = 10])",
+        "description": "Creates or restarts a custom plot with specified title. Controls plot appearance with axis ranges, labels, window size, grid lines, and label sizes. Returns NULL if plot cannot be created (e.g., in SLiMguiLegacy). Plot data can be added using Plot methods like lines(), points(), and text()."
+    },
+    "logFileData": {
+        "signature": "(Nfs)logFileData(object<LogFile>$ logFile, is$ column)",
+        "description": "Returns data from specified LogFile column as float vector (if numeric) or string vector (if non-numeric). Returns NULL if column doesn't exist. Only available in SLiMgui where logged data is kept in memory for debugging output viewer."
+    },
+    "openDocument": {
+        "signature": "(void)openDocument(string$ filePath)",
+        "description": "Opens document at filePath in SLiMgui. Supports SLiM models (.slim), text files (.txt), and various image formats (PNG, JPG/JPEG, BMP, GIF). In SLiMguiLegacy, supports PDF but not other image formats."
+    },
+    "pauseExecution": {
+        "signature": "(void)pauseExecution(void)",
+        "description": "Pauses model execution in SLiMgui at end of current tick. Equivalent to clicking Play button. Execution can be resumed by user. Only works during simple Play mode, not during profiling or forward execution to specific tick."
+    },
+    "plotWithTitle": {
+        "signature": "(No<Plot>$)plotWithTitle(string$ title)",
+        "description": "Returns existing plot created by createPlot() with specified title. Returns NULL if no such plot exists. Only accesses plots created through createPlot(), not other SLiMgui plots."
+    },
+
+    
+    "// === SpatialMap Class Functions ===": {},
+
+    "add": {
+        "signature": "(object<SpatialMap>$)add(ifo<SpatialMap> x)",
+        "description": "Adds x to each grid value. x can be: singleton value, vector/matrix/array matching grid dimensions, or another SpatialMap. For SpatialMap x, dimensions and bounds must match. Returns target map for chaining."
+    },
+    "blend": {
+        "signature": "(object<SpatialMap>$)blend(ifo<SpatialMap> x, float$ xFraction)",
+        "description": "Blends x into map with weight xFraction (in [0,1]). Result is x*xFraction + target*(1-xFraction). x can be: singleton value, vector/matrix/array matching grid dimensions, or another SpatialMap. Returns target map."
+    },
+    "changeColors": {
+        "signature": "(void)changeColors([Nif valueRange = NULL], [Ns colors = NULL])",
+        "description": "Changes color scheme. valueRange sets min/max for color mapping, colors specifies color spectrum. Both NULL for default grayscale. Required for mapColor() calls."
+    },
+    "changeValues": {
+        "signature": "(void)changeValues(ifo<SpatialMap> x)",
+        "description": "Updates grid values from x (SpatialMap or vector/matrix/array). Grid resolution can change. Preserves color mapping, bounds, and spatiality. Useful for dynamic landscape changes."
+    },
+    "divide": {
+        "signature": "(object<SpatialMap>$)divide(ifo<SpatialMap> x)",
+        "description": "Divides map by x. x can be: singleton value, vector/matrix/array matching grid dimensions, or another SpatialMap. For SpatialMap x, dimensions and bounds must match. Returns target map for chaining."
+    },
+    "exp": {
+        "signature": "(object<SpatialMap>$)exp(void)",
+        "description": "Exponentiates each grid value x to e^x. Returns target map for chaining operations."
+    },
+    "gridValues": {
+        "signature": "(float)gridValues(void)",
+        "description": "Returns grid values as vector (1D), matrix (2D), or array (3D). Format matches that needed by defineSpatialMap() to recreate identical map."
+    },
+    "interpolate": {
+        "signature": "(object<SpatialMap>$)interpolate(integer$ factor, [string$ method = \"linear\"])",
+        "description": "Increases grid resolution by factor (2-10001). Methods: 'linear', 'nearest', or 'cubic'. Inserts factor-1 points between existing values. Returns target map for chaining."
+    },
+    "mapColor": {
+        "signature": "(string)mapColor(numeric value)",
+        "description": "Translates values to colors using map's color scheme. Requires valueRange and colors to be set. Returns color strings."
+    },
+    "mapImage": {
+        "signature": "(object<Image>$)mapImage([Ni$ width = NULL], [Ni$ height = NULL], [logical$ centers = F], [logical$ color = T])",
+        "description": "Creates Image from 2D map. Size from parameters or map. centers=T samples pixel centers, F samples vertices. color=T uses map's color scheme, F creates grayscale."
+    },
+    "mapValue": {
+        "signature": "(float)mapValue(float point)",
+        "description": "Translates spatial coordinates to map values. point length must match map spatiality. Supports multiple points. Uses interpolation if enabled. Clamps to spatial bounds."
+    },
+    "multiply": {
+        "signature": "(object<SpatialMap>$)multiply(ifo<SpatialMap> x)",
+        "description": "Multiplies map by x. x can be: singleton value, vector/matrix/array matching grid dimensions, or another SpatialMap. For SpatialMap x, dimensions and bounds must match. Returns target map for chaining."
+    },
+    "power": {
+        "signature": "(object<SpatialMap>$)power(ifo<SpatialMap> x)",
+        "description": "Raises map values to power x. x can be: singleton value, vector/matrix/array matching grid dimensions, or another SpatialMap. For SpatialMap x, dimensions and bounds must match. Returns target map for chaining."
+    },
+    "range": {
+        "signature": "(float)range(void)",
+        "description": "Returns vector of [minimum, maximum] values in map."
+    },
+    "rescale": {
+        "signature": "(object<SpatialMap>$)rescale([numeric$ min = 0.0], [numeric$ max = 1.0])",
+        "description": "Rescales map values to range [min, max]. Default [0.0, 1.0]. Requires min < max and finite values. Returns target map for chaining."
+    },
+    "sampleImprovedNearbyPoint": {
+        "signature": "(float)sampleImprovedNearbyPoint(float point, float$ maxDistance, string$ functionType, ...)",
+        "description": "Metropolis-Hastings sampling of nearby points. Returns new point if value higher, or probabilistically if lower. Requires non-negative map values. Supports kernels: 'f', 'l', 'e', 'n', 't' (no 3D for 't')."
+    },
+    "sampleNearbyPoint": {
+        "signature": "(float)sampleNearbyPoint(float point, float$ maxDistance, string$ functionType, ...)",
+        "description": "Samples nearby point weighted by map values and kernel. Supports kernels: 'f', 'l', 'e', 'n', 't' (no 3D for 't'). Negative map values treated as zero. Respects boundaries."
+    },
+    "smooth": {
+        "signature": "(object<SpatialMap>$)smooth(float$ maxDistance, string$ functionType, ...)",
+        "description": "Smooths map by kernel convolution. Kernel types: 'f', 'l', 'e', 'n', 'c', 't'. Handles periodic boundaries. Normalizes kernel to preserve average value. Returns target map for chaining."
+    },
+    "subtract": {
+        "signature": "(object<SpatialMap>$)subtract(ifo<SpatialMap> x)",
+        "description": "Subtracts x from map. x can be: singleton value, vector/matrix/array matching grid dimensions, or another SpatialMap. For SpatialMap x, dimensions and bounds must match. Returns target map for chaining."
+    },
+
+
+    "// === Species Class Functions ===": {},
+    
+    "addSubpop": {
+        "signature": "(object<Subpopulation>$)addSubpop(is$ subpopID, integer$ size, [float$ sexRatio = 0.5], [logical$ haploid = F])",
+        "description": "Adds new subpopulation with given ID and size. In sexual models, sexRatio controls M:M+F ratio. In nonWF models, haploid=T creates individuals with null second genome. Returns new subpopulation."
+    },
+    "addSubpopSplit": {
+        "signature": "(object<Subpopulation>$)addSubpopSplit(is$ subpopID, integer$ size, io<Subpopulation>$ sourceSubpop, [float$ sexRatio = 0.5])",
+        "description": "Creates new subpopulation by splitting from sourceSubpop. Initial individuals are clonal copies from source, chosen by fitness. Returns new subpopulation."
+    },
+    "individualsWithPedigreeIDs": {
+        "signature": "(object<Individual>)individualsWithPedigreeIDs(integer pedigreeIDs, [Nio<Subpopulation> subpops = NULL])",
+        "description": "Looks up individuals by pedigree IDs. Requires pedigree tracking enabled. Returns vector of matching individuals. Can search specific subpopulations for efficiency."
+    },
+    "killIndividuals": {
+        "signature": "(void)killIndividuals(object<Individual> individuals)",
+        "description": "Immediately kills specified individuals in nonWF models. Removes from subpopulation, keeps in temporary graveyard. Only for nonWF models, not for WF models where mortality is automatic."
+    },
+    "mutationCounts": {
+        "signature": "(integer)mutationCounts(Nio<Subpopulation> subpops, [No<Mutation> mutations = NULL])",
+        "description": "Returns frequency counts of mutations in specified subpopulations. If mutations=NULL, counts all active mutations. Can specify subpops=NULL for population-wide counts."
+    },
+    "mutationFrequencies": {
+        "signature": "(float)mutationFrequencies(Nio<Subpopulation> subpops, [No<Mutation> mutations = NULL])",
+        "description": "Returns frequencies of mutations in specified subpopulations. If mutations=NULL, calculates for all active mutations. Can specify subpops=NULL for population-wide frequencies."
+    },
+    "registerFitnessCallback": {
+        "signature": "(void)registerFitnessCallback(string$ functionName, [object<MutationType>$ mutType = NULL])",
+        "description": "Registers a callback function to calculate fitness effects. If mutType is provided, the callback only applies to mutations of that type."
+    },
+    "registerMateChoiceCallback": {
+        "signature": "(void)registerMateChoiceCallback(string$ functionName)",
+        "description": "Registers a callback function to determine mate choice during sexual reproduction."
+    },
+    "registerModifyChildCallback": {
+        "signature": "(void)registerModifyChildCallback(string$ functionName)",
+        "description": "Registers a callback function that can modify offspring after they are generated but before they are added to the population."
+    },
+    "registerMutationCallback": {
+        "signature": "(void)registerMutationCallback(string$ functionName)",
+        "description": "Registers a callback function that is called whenever new mutations are generated."
+    },
+    "registerRecombinationCallback": {
+        "signature": "(void)registerRecombinationCallback(string$ functionName)",
+        "description": "Registers a callback function that is called during recombination to determine breakpoint positions."
+    },
+    "registerReproductionCallback": {
+        "signature": "(void)registerReproductionCallback(string$ functionName)",
+        "description": "Registers a callback function that handles reproduction, replacing SLiM's built-in reproduction methods."
+    },
+    "registerSurvivalCallback": {
+        "signature": "(void)registerSurvivalCallback(string$ functionName)",
+        "description": "Registers a callback function that determines whether individuals survive between generations."
+    },
+    "subsetMutations": {
+        "signature": "(object<Mutation>)subsetMutations([No<Mutation>$ exclude = NULL], [Nio<MutationType>$ mutType = NULL], [Ni$ position = NULL], [Nis$ nucleotide = NULL], [Ni$ tag = NULL], [Ni$ id = NULL])",
+        "description": "Returns a vector of mutations subset from the list of all active mutations in the species (as would be provided by the mutations property).  The parameters specify constraints upon the subset of mutations that will be returned.  Parameter exclude, if non-NULL, may specify a specific mutation that should not be included (typically the focal mutation in some operation).  Parameter mutType, if non-NULL, may specify a mutation type for the mutations to be returned (as either a MutationType object or an integer identifier).  Parameter position, if non-NULL, may specify a base position for the mutations to be returned.  Parameter nucleotide, if non-NULL, may specify a nucleotide for the mutations to be returned (either as a string, \"A\" / \"C\" / \"G\" / \"T\", or as an integer, 0 / 1 / 2 / 3 respectively).  Parameter tag, if non-NULL, may specify a tag value for the mutations to be returned.  Parameter id, if non-NULL, may specify a required value for the id property of the mutations to be returned. \n\n This method is shorthand for getting the mutations property of the subpopulation, and then using operator [] to select only mutations with the desired properties; besides being much simpler than the equivalent Eidos code, it is also much faster.  Note that if you only need to select on mutation type, the mutationsOfType() method will be even faster."
+    },
+    "treeSeqOutput": {
+        "signature": "(void)treeSeqOutput(string$ path, [logical$ binary = T])",
+        "description": "Outputs the current tree sequence to a file. If binary is T, the output is in binary format; if F, it is in text format."
+    },
+    "treeSeqRememberIndividuals": {
+        "signature": "(void)treeSeqRememberIndividuals([No<Individual> individuals = NULL], [logical$ permanent = F])",
+        "description": "Marks individuals to be remembered in the tree sequence, even after they would normally be garbage-collected. If permanent is T, the individuals will be remembered permanently."
+    },
+    "treeSeqSimplify": {
+        "signature": "(void)treeSeqSimplify([No<Individual> individuals = NULL], [logical$ simplifyAncestry = T])",
+        "description": "Simplifies the tree sequence, retaining only the ancestry relevant to the specified individuals. If simplifyAncestry is T, also simplifies the ancestry tree."
+    },
+    "treeSeqCoalesced": {
+        "signature": "(logical$)treeSeqCoalesced()",
+        "description": "Returns whether the tree sequence has coalesced to a single common ancestor at all genomic positions."
+    },
+
+    "// === Subpopulation Class Functions ===": {},
+
+    "addCloned": {
+        "signature": "(object<Individual>)addCloned(object<Individual>$ parent, [integer$ count = 1], [logical$ defer = F])",
+        "description": "Generates new offspring by clonal reproduction from parent. Returns vector of new offspring. In spatial models, offspring inherit parent's position. Genome generation can be deferred for parallel processing."
+    },
+    "addCrossed": {
+        "signature": "(object<Individual>)addCrossed(object<Individual>$ parent1, object<Individual>$ parent2, [Nfs$ sex = NULL], [integer$ count = 1], [logical$ defer = F])",
+        "description": "Generates offspring through sexual reproduction between parents. In sexual models parent1 must be female. Returns vector of new offspring. Genome generation can be deferred for parallel processing."
+    },
+    "addEmpty": {
+        "signature": "(object<Individual>)addEmpty([Nfs$ sex = NULL], [Nl$ genome1Null = NULL], [Nl$ genome2Null = NULL], [integer$ count = 1])",
+        "description": "Creates individuals with empty genomes. Can specify sex and whether genomes are null. Returns vector of new individuals. For nonWF models only."
+    },
+    "addRecombinant": {
+        "signature": "(object<Individual>)addRecombinant(No<Genome>$ strand1, No<Genome>$ strand2, Ni breaks1, No<Genome>$ strand3, No<Genome>$ strand4, Ni breaks2, [Nfs$ sex = NULL], [No<Individual>$ parent1 = NULL], [No<Individual>$ parent2 = NULL], [logical$ randomizeStrands = F], [integer$ count = 1], [logical$ defer = F])",
+        "description": "Creates offspring with specified recombination patterns. Highly flexible for custom reproduction schemes. Returns vector of new offspring. For nonWF models only."
+    },
+    "addSelfed": {
+        "signature": "(object<Individual>)addSelfed(object<Individual>$ parent, [integer$ count = 1], [logical$ defer = F])",
+        "description": "Generates offspring through self-fertilization. Only for hermaphroditic models. Returns vector of new offspring. Genome generation can be deferred for parallel processing."
+    },
+    "addSpatialMap": {
+        "signature": "(void)addSpatialMap(object<SpatialMap>$ map)",
+        "description": "Adds existing SpatialMap to subpopulation. Map must be compatible with subpopulation's spatial bounds and dimensionality."
+    },
+    "cachedFitness": {
+        "signature": "(float)cachedFitness(Ni indices)",
+        "description": "Returns cached fitness values for specified individuals. Cannot be called during fitness calculation or from late() events in WF models."
+    },
+    "configureDisplay": {
+        "signature": "(void)configureDisplay([Nf center = NULL], [Nf$ scale = NULL], [Ns$ color = NULL])",
+        "description": "Customizes subpopulation display in SLiMgui. Controls position, size, and color of displayed circle."
+    },
+    "defineSpatialMap": {
+        "signature": "(object<SpatialMap>$)defineSpatialMap(string$ name, string$ spatiality, numeric values, [logical$ interpolate = F], [Nif valueRange = NULL], [Ns colors = NULL])",
+        "description": "Creates new spatial map for subpopulation. Map is automatically added. Supports various spatiality options and interpolation methods."
+    },
+    "deviatePositions": {
+        "signature": "(void)deviatePositions(No<Individual> individuals, string$ boundary, numeric$ maxDistance, string$ functionType, ...)",
+        "description": "Modifies spatial positions of individuals using specified dispersal kernel and boundary conditions. Efficient for modeling movement."
+    },
+    "outputMSSample": {
+        "signature": "(void)outputMSSample(integer$ sampleSize, [logical$ replace = T], [string$ requestedSex = \"*\"], [Ns$ filePath = NULL], [logical$ append = F], [logical$ filterMonomorphic = F])",
+        "description": "Outputs random sample in MS format. Can filter by sex and control monomorphic sites. Positions span [0,1]."
+    },
+    "outputSample": {
+        "signature": "(void)outputSample(integer$ sampleSize, [logical$ replace = T], [string$ requestedSex = \"*\"], [Ns$ filePath = NULL], [logical$ append = F])",
+        "description": "Outputs random sample in SLiM format. Can sample with/without replacement and filter by sex."
+    },
+    "outputVCFSample": {
+        "signature": "(void)outputVCFSample(integer$ sampleSize, [logical$ replace = T], [string$ requestedSex = \"*\"], [logical$ outputMultiallelics = T], [Ns$ filePath = NULL], [logical$ append = F], [logical$ simplifyNucleotides = F], [logical$ outputNonnucleotides = T])",
+        "description": "Outputs random sample in VCF format. Supports various output options for nucleotide and non-nucleotide mutations."
+    },
+    "pointDeviated": {
+        "signature": "(float)pointDeviated(integer$ n, float point, string$ boundary, numeric$ maxDistance, string$ functionType, ...)",
+        "description": "Returns points deviated from input using dispersal kernel and boundary conditions. Supports various kernel types and boundaries."
+    },
+    "pointInBounds": {
+        "signature": "(logical)pointInBounds(float point)",
+        "description": "Tests if point is within subpopulation's spatial boundaries. Useful for boundary condition implementation."
+    },
+    "pointPeriodic": {
+        "signature": "(float)pointPeriodic(float point)",
+        "description": "Wraps points around periodic spatial boundaries. Only affects periodic dimensions, preserves non-periodic coordinates."
+    },
+    "pointReflected": {
+        "signature": "(float)pointReflected(float point)",
+        "description": "Reflects points back into spatial boundaries. Useful for implementing reflecting boundary conditions."
+    },
+    "pointStopped": {
+        "signature": "(float)pointStopped(float point)",
+        "description": "Clamps points to spatial boundaries. Useful for implementing stopping boundary conditions."
+    },
+    "pointUniform": {
+        "signature": "(float)pointUniform([integer$ n = 1])",
+        "description": "Generates random points uniformly distributed within spatial boundaries. Returns n*dimensionality coordinates."
+    },
+    "removeSpatialMap": {
+        "signature": "(void)removeSpatialMap(so<SpatialMap>$ map)",
+        "description": "Removes spatial map from subpopulation. Optional but recommended when map no longer needed."
+    },
+    "removeSubpopulation": {
+        "signature": "(void)removeSubpopulation(void)",
+        "description": "Removes subpopulation from model. For nonWF models only - WF models should use setSubpopulationSize(0)."
+    },
+    "sampleIndividuals": {
+        "signature": "(object<Individual>)sampleIndividuals(integer$ size, [logical$ replace = F], [No<Individual>$ exclude = NULL], [Ns$ sex = NULL], [Ni$ tag = NULL], [Ni$ minAge = NULL], [Ni$ maxAge = NULL], [Nl$ migrant = NULL], [Nl$ tagL0 = NULL], [Nl$ tagL1 = NULL], [Nl$ tagL2 = NULL], [Nl$ tagL3 = NULL], [Nl$ tagL4 = NULL])",
+        "description": "Returns sample of individuals matching specified criteria. Supports various filters including sex, age, tags."
+    },
+    "setCloningRate": {
+        "signature": "(void)setCloningRate(numeric rate)",
+        "description": "Sets cloning rate for subpopulation. Can specify different rates by sex in sexual models."
+    },
+    "setMigrationRates": {
+        "signature": "(void)setMigrationRates(io<Subpopulation> sourceSubpops, numeric rates)",
+        "description": "Sets migration rates from source subpopulations. Rates specify expected fraction of offspring from each source."
+    },
+    "setSelfingRate": {
+        "signature": "(void)setSelfingRate(numeric$ rate)",
+        "description": "Sets selfing rate for subpopulation. Only valid in hermaphroditic models."
+    },
+    "setSexRatio": {
+        "signature": "(void)setSexRatio(float$ sexRatio)",
+        "description": "Sets sex ratio (M:M+F) for subpopulation. Takes effect when next generating offspring."
+    },
+    "setSpatialBounds": {
+        "signature": "(void)setSpatialBounds(numeric bounds)",
+        "description": "Sets spatial boundaries for subpopulation. Must be set before adding spatial maps."
+    },
+    "setSubpopulationSize": {
+        "signature": "(void)setSubpopulationSize(integer$ size)",
+        "description": "Sets target size for subpopulation. Takes effect when next generating offspring."
+    },
+    "subsetIndividuals": {
+        "signature": "(object<Individual>)subsetIndividuals([No<Individual>$ exclude = NULL], [Ns$ sex = NULL], [Ni$ tag = NULL], [Ni$ minAge = NULL], [Ni$ maxAge = NULL], [Nl$ migrant = NULL], [Nl$ tagL0 = NULL], [Nl$ tagL1 = NULL], [Nl$ tagL2 = NULL], [Nl$ tagL3 = NULL], [Nl$ tagL4 = NULL])",
+        "description": "Returns subset of individuals matching specified criteria. Supports various filters including sex, age, tags."
+    },
+    "takeMigrants": {
+        "signature": "(void)takeMigrants(object<Individual> migrants)",
+        "description": "Immediately moves individuals to this subpopulation. For nonWF models only - WF models use automatic migration."
+    },
+
+
+
+    "// === Initialization Functions ===": {},
+
+
     "initializeAncestralNucleotides": {
-        "signature": "(integer$)initializeAncestralNucleotides(is sequence)",
-        "description": "This function, which may be called only in nucleotide-based models, supplies an ancestral nucleotide sequence for the model.Thesequenceparameter may be anintegervector providing nucleotide values (A=0, C=1, G=2, T=3), or astringvector providing single-character nucleotides (\"A\",\"C\",\"G\",\"T\"), or a singletonstringproviding the sequence as one string (\"ACGT...\"), or a singletonstringproviding the filesystem path of a FASTA file which will be read in to provide the sequence (if the file contains than one sequence, the first sequence will be used).Only A/C/G/T nucleotide values may be provided; other symbols, such as those for amino acids, gaps, or nucleotides of uncertain identity, are not allowed.The two semantic meanings ofsequencethat involve a singletonstringvalue are distinguished heuristically; a singletonstringthat contains only the letters ACGT will be assumed to be a nucleotide sequence rather than a filename.The length of the ancestral sequence is returned.\n\nA utility function,randomNucleotides(), is provided by SLiM to assist in generating simple random nucleotide sequences.\n\n"
+        "signature": "(integer$)initializeAncestralNucleotides(is sequence)",
+        "description": "Supplies an ancestral nucleotide sequence for nucleotide-based models. The sequence can be: integer vector (A=0,C=1,G=2,T=3), string vector of nucleotides, single string sequence, or path to FASTA file. Only A/C/G/T allowed. Returns sequence length."
     },
     "initializeGeneConversion": {
-        "signature": "(void)initializeGeneConversion(numeric$ nonCrossoverFraction, numeric$ meanLength, numeric$ simpleConversionFraction, [numeric$ bias = 0], [logical$ redrawLengthsOnFailure = F])",
-        "description": "Calling this function switches the recombination model from a “simple crossover” model to a “double-stranded break (DSB)” model, and configures the details of the gene conversion tracts that will therefore be modeled.The fraction of DSBs that will be modeled as non-crossover events is given bynonCrossoverFraction.The mean length of gene conversion tracts (whether associated with crossover or non-crossover events) is given bymeanLength; the actual extent of a gene conversion tract will be the sum of two independent draws from a geometric distribution with meanmeanLength/2.The fraction of gene conversion tracts that are modeled as “simple” is given bysimpleConversionFraction; the remainder will be modeled as “complex”, involving repair of heteroduplex mismatches.Finally, theGCbias during heteroduplex mismatch repair is given bybias, with the default of0.0indicating no bias,1.0indicating an absolute preference forG/Cmutations overA/Tmutations, and-1.0indicating an absolute preference forA/Tmutations overG/Cmutations.A non-zero bias may only be set in nucleotide-based models.This function, and the way that gene conversion is modeled, fundamentally changed in SLiM 3.3.\n\nBeginning in SLiM 4.1, theredrawLengthsOnFailureparameter can be used to modify the internal mechanics of layout of gene conversion tracts.If it isF(the default, and the only behavior supported before SLiM 4.1), then if an attempt to lay out gene conversion tracts fails (because the tracts overlap each other, or overlap the start or end of the chromosome), SLiM will try again by drawing new positions for the tracts – essentially shuffling the tracts around to try to find positions for them that don’t overlap.IfredrawLengthsOnFailureisT, then if an attempt to lay out gene conversion tracts fails, SLiM will try again by drawing new lengths for the tracts, as well as new positions.This makes it more likely that layout will succeed, but risks biasing the realized mean tract length downward from the requested mean length (since layout of long tracts is more likely fail due to overlap).In either case, if SLiM attempts to lay out gene conversion tracts 100 times without success, an error will result.That error indicates that the specified constraints for gene conversion are difficult to satisfy – tracts may commonly be so long that it is difficult or impossible to find an acceptable layout for them within the specified chromosome length.SettingredrawLengthsOnFailuretoTmay mitigate this problem, at the price of biasing the mean tract length downward as discussed.\n\n"
+        "signature": "(void)initializeGeneConversion(numeric$ nonCrossoverFraction, numeric$ meanLength, numeric$ simpleConversionFraction, [numeric$ bias = 0], [logical$ redrawLengthsOnFailure = F])",
+        "description": "Configures gene conversion model with DSB parameters: nonCrossover fraction, mean tract length, simple conversion fraction, GC bias, and length redraw option. Bias requires nucleotide-based models."
     },
     "initializeGenomicElement": {
-        "signature": "(object<GenomicElement>)initializeGenomicElement(io<GenomicElementType> genomicElementType, integer start, integer end)",
-        "description": "Add a genomic element to the chromosome at initialization time.Thestartandendparameters give the first and last base positions to be spanned by the new genomic element.The new element will be based upon the genomic element type identified bygenomicElementType, which can be either aninteger, representing the ID of the desired element type, or anobjectof typeGenomicElementTypespecified directly.\n\nBeginning in SLiM 3.3, this function is vectorized: thegenomicElementType,start, andendparameters do not have to be singletons.In particular,startandendmay be of any length, but must be equal in length; eachstart/endelement pair will generate one new genomic element spanning the given base positions.In this case,genomicElementTypemay still be a singleton, providing the genomic element type to be used for all of the new genomic elements, or it may be equal in length tostartandend, providing an independent genomic element type for each new element.When adding a large number of genomic elements, it will be much faster to add them in order of ascending position with a vectorized call.\n\nThe return value provides the genomic element(s) created by the call, in the order in which they were specified in the parameters toinitializeGenomicElement().\n\n"
+        "signature": "(object<GenomicElement>)initializeGenomicElement(io<GenomicElementType> genomicElementType, integer start, integer end)",
+        "description": "Adds genomic element spanning start to end positions. Vectorized for multiple elements. Returns created elements."
     },
     "initializeGenomicElementType": {
-        "signature": "(object<GenomicElementType>$)initializeGenomicElementType(is$ id, io<MutationType> mutationTypes, numeric proportions, [Nf mutationMatrix = NULL])",
-        "description": "Add a genomic element type at initialization time.Theidmust not already be used for any genomic element type in the simulation.ThemutationTypesvector identifies the mutation types used by the genomic element, and theproportionsvector should be of equal length, specifying the relative proportion of mutations that will be drawn from the corresponding mutation type (proportions do not need to add up to one; they are interpreted relatively).Theidparameter may be either anintegergiving the ID of the new genomic element type, or astringgiving the name of the new genomic element type (such as\"g5\"to specify an ID of 5).ThemutationTypesparameter may be either anintegervector representing the IDs of the desired mutation types, or anobjectvector ofMutationTypeelements specified directly.The global symbol for the new genomic element type is immediately available; the return value also provides the new object.\n\nThemutationMatrixparameter isNULLby default, and in non-nucleotide-based models it must beNULL.In nucleotide-based models, on the other hand, it must be non-NULL, and therefore must be supplied.In that case,mutationMatrixshould take one of two standard forms.For sequence-based mutation rates that depend upon only the single nucleotide at a mutation site,mutationMatrixshould be a 4×4floatmatrix, specifying mutation rates for an existing nucleotide state (rows from0–3representing A/C/G/T) to each of the four possible derived nucleotide states (columns, with the same meaning).The mutation rates in this matrix are absolute rates, per nucleotide per gamete; they will be used by SLiM directly unless they are multiplied by a factor from the hotspot map (seeinitializeHotspotMap()).Rates inmutationMatrixthat involve the mutation of a nucleotide to itself (AtoA,CtoC, etc.) are not used by SLiM and must be0.0by convention.\n\nIt is important to note that the order of the rows and columns used in SLiM, A/C/G/T, is not a universal convention; other sources will present substitution-rate/transition-rate matrices using different conventions, and so care must be taken when importing such matrices into SLiM.\n\nFor sequence-based mutation rates that depend upon the trinucleotide sequence centered upon a mutation site (the adjacent bases to the left and right, in other words, as well as the mutating nucleotide itself),mutationMatrixshould be a 64×4floatmatrix, specifying mutation rates for the central nucleotide of an existing trinucleotide sequence (rows from0–63, representing codons as described in the documentation for theancestralNucleotides()method ofChromosome) to each of the four possible derived nucleotide states (columns from0–3for A/C/G/T as before).Note that in every case it is the central nucleotide of the trinucleotide sequence that is mutating, but rates can be specified independently based upon the nucleotides in the first and third positions as well, with this type of mutation matrix.\n\nSeveral helper functions are defined to construct common types of mutation matrices, such asmmJukesCantor()to create a mutation matrix for a Jukes–Cantor model.\n\n"
+        "signature": "(object<GenomicElementType>$)initializeGenomicElementType(is$ id, io<MutationType> mutationTypes, numeric proportions, [Nf mutationMatrix = NULL])",
+        "description": "Adds genomic element type with mutation types and proportions. In nucleotide models requires mutation matrix. Returns new type."
     },
     "initializeHotspotMap": {
-        "signature": "(void)initializeHotspotMap(numeric multipliers, [Ni ends = NULL], [string$ sex = \"*\"])",
-        "description": "In nucleotide-based models, set the mutation ratemultiplieralong the chromosome.Nucleotide-based models define sequence-based mutation rates that are set up with themutationMatrixparameter toinitializeGenomicElementType().If no hotspot map is specified by callinginitializeHotspotMap(), a hotspot map with a multiplier of1.0across the whole chromosome is assumed (and so the sequence-based rates are the absolute mutation rates used by SLiM).A hotspot map modifies the sequence-based rates by scaling them up in some regions, with multipliers greater than1.0(representing mutational hot spots), and/or scaling them down in some regions, with multipliers less than1.0(representing mutational cold spots).\n\nThere are two ways to call this function.If the optionalendsparameter isNULL(the default), thenmultipliersmust be a singleton value that specifies a single multiplier to be used along the entire chromosome (typically1.0, but not required to be).If, on the other hand,endsis supplied, thenmultipliersandendsmust be the same length, and the values inendsmust be specified in ascending order.In that case,multipliersandendstaken together specify the multipliers to be used along successive contiguous stretches of the chromosome, from beginning to end; the last position specified inendsshould extend to the end of the chromosome (i.e. at least to the end of the last genomic element, if not further).\n\nFor example, if the following call is made:\n\ninitializeHotspotMap(c(1.0, 1.2), c(5000, 9999));\n\nthen the result is that the mutation rate multiplier for bases0...5000(inclusive) will be1.0(and so the specified sequence-based mutation rates will be used verbatim), and the multiplier for bases5001...9999(inclusive) will be1.2(and so the sequence-based mutation rates will be multiplied by 1.2 within the region).\n\nNote that mutations are generated by SLiM only within genomic elements, regardless of the hotspot map.In effect, the hotspot map given is intersected with the coverage area of the genomic elements defined; areas outside of any genomic element are given a multiplier of zero.There is no harm in supplying a hotspot map that specifies multipliers for areas outside of the genomic elements defined; the excess information is simply not used.\n\nIf the optionalsexparameter is\"*\"(the default), then the supplied hotspot map will be used for both sexes (which is the only option for hermaphroditic simulations).In sexual simulationssexmay be\"M\"or\"F\"instead, in which case the supplied hotspot map is used only for that sex (i.e., when generating a gamete from a parent of that sex).In this case, two calls must be made toinitializeHotspotMap(), one for each sex, even if a multiplier of1.0is desired for the other sex; no default hotspot map is supplied.\n\n"
+        "signature": "(void)initializeHotspotMap(numeric multipliers, [Ni ends = NULL], [string$ sex = \"*\"])",
+        "description": "Sets mutation rate multipliers along chromosome in nucleotide models. Can specify sex-specific maps."
     },
     "initializeInteractionType": {
-        "signature": "(object<InteractionType>$)initializeInteractionType(is$ id, string$ spatiality, [logical$ reciprocal = F], [numeric$ maxDistance = INF], [string$ sexSegregation = \"**\"])",
-        "description": "Add an interaction type at initialization time.Theidmust not already be used for any interaction type in the simulation.Theidparameter may be either anintegergiving the ID of the new interaction type, or astringgiving the name of the new interaction type (such as\"i5\"to specify an ID of 5).\n\nThespatialitymay be\"\", for non-spatial interactions (i.e., interactions that do not depend upon the distance between individuals);\"x\",\"y\", or\"z\"for one-dimensional interactions;\"xy\",\"xz\", or\"yz\"for two-dimensional interactions; or\"xyz\"for three-dimensional interactions.The dimensions referenced by spatiality must be defined as spatial dimensions withinitializeSLiMOptions(); if the simulation has dimensionality\"xy\", for example, then interactions in the simulation may have spatiality\"\",\"x\",\"y\", or\"xy\", but may not reference spatial dimensionzand thus may not have spatiality\"xz\",\"yz\", or\"xyz\".If no spatial dimensions have been configured, only non-spatial interactions may be defined.\n\nThereciprocalflag may beT, in which case the interaction is guaranteed by the user to bereciprocal: whatever the interaction strength is for exerter B upon receiver A, it will be equal (in magnitude and sign) for exerter A upon receiver B.In principle, this allows theInteractionTypeto reduce the amount of computation necessary by up to a factor of two (although it may or may not be used).IfreciprocalisF, the interaction is not guaranteed to be reciprocal and each interaction will be computed independently.The built-in interaction formulas are all reciprocal, but if you implement aninteraction()callback, you must consider whether the callback you have implemented preserves reciprocality or not.For this reason, the default isreciprocal=F, so that bugs are not inadvertently introduced by an invalid assumption of reciprocality.See below for a note regarding reciprocality in sexual simulations when using thesexSegregationflag.\n\nThemaxDistanceparameter supplies the maximum distance over which interactions of this type will be evaluated; at greater distances, the interaction strength is considered to be zero (for efficiency).The default value ofmaxDistance,INF(positive infinity), indicates that there is no maximum interaction distance; note that this can make some interaction queries much less efficient, and is therefore not recommended.In SLiM 3.1 and later, a warning will be issued if a spatial interaction type is defined with no maximum distance to encourage a maximum distance to be defined.\n\nThesexSegregationparameter governs the applicability of the interaction to each sex, in sexual simulations.It does not affect distance calculations in any way; it only modifies the way in which interaction strengths are calculated.The default,\"**\", implies that the interaction is felt by both sexes (the first character of thestringvalue) and is exerted by both sexes (the second character of thestringvalue).Either or both characters may beMorFinstead; for example,\"MM\"would indicate a male-male interaction, such as male-male competition, whereas\"FM\"would indicate an interaction influencing only female receivers that is influenced only by male exerters, such as male mating displays that influence female attraction.This parameter may be set only to\"**\"unless sex has been enabled withinitializeSex().Note that a value ofsexSegregationother than\"**\"may imply some degree of non-reciprocality, but it is not necessary to specifyreciprocalto beFfor this reason; SLiM will take the sex-segregation of the interaction into account for you.The value ofreciprocalmay therefore be interpreted as meaning: in those cases, if any, in which A interacts with B and B interacts with A, is the interaction strength guaranteed to be the same in both directions?ThesexSegregationparameter is shorthand for setting sex constraints on the interaction type using thesetConstraints()method; see that method for a more extensive set of constraints that may be used.\n\nBy default, the interaction strength is1.0for all interactions withinmaxDistance.Often it is desirable to change the interaction function usingsetInteractionFunction(); modifying interaction strengths can also be achieved withinteraction()callbacks if necessary.In any case, interactions beyondmaxDistancealways have a strength of0.0, and the interaction strength of an individual with itself is always0.0, regardless of the interaction function or callbacks.\n\nThe global symbol for the new interaction type is immediately available; the return value also provides the new object.Note that in multispecies models,initializeInteractionType()must be called from a non-species-specificinteraction()callback (declared asspecies all initialize()), since interactions are managed at the community level.\n\n"
+        "signature": "(object<InteractionType>$)initializeInteractionType(is$ id, string$ spatiality, [logical$ reciprocal = F], [numeric$ maxDistance = INF], [string$ sexSegregation = \"**\"])",
+        "description": "Adds interaction type with spatial dimensions, reciprocality, max distance, and sex constraints. Returns new type."
     },
     "initializeMutationRate": {
-        "signature": "(void)initializeMutationRate(numeric rates, [Ni ends = NULL], [string$ sex = \"*\"])",
-        "description": "Set the mutation rate per base position per gamete.To be precise, this mutation rate is the expected mean number of mutations that will occur per base position per gamete; note that this is different from how the recombination rate is defined (seeinitializeRecombinationRate()).The number of mutations that actually occurs at a given base position when generating an offspring genome is, in effect, drawn from a Poisson distribution with that expected mean (but under the hood SLiM uses a mathematically equivalent but much more efficient strategy).It is possible for this Poisson draw to indicate that two or more new mutations have arisen at the same base position, particularly when the mutation rate is very high; in this case, the new mutations will be added to the site one at a time, and as always the mutation stacking policy will be followed.\n\nThere are two ways to call this function.If the optionalendsparameter isNULL(the default), thenratesmust be a singleton value that specifies a single mutation rate to be used along the entire chromosome.If, on the other hand,endsis supplied, thenratesandendsmust be the same length, and the values inendsmust be specified in ascending order.In that case,ratesandendstaken together specify the mutation rates to be used along successive contiguous stretches of the chromosome, from beginning to end; the last position specified inendsshould extend to the end of the chromosome (i.e. at least to the end of the last genomic element, if not further).\n\nFor example, if the following call is made:\n\ninitializeMutationRate(c(1e-7, 2.5e-8), c(5000, 9999));\n\nthen the result is that the mutation rate for bases0...5000(inclusive) will be1e-7, and the rate for bases5001...9999(inclusive) will be2.5e-8.\n\nNote that mutations are generated by SLiM only within genomic elements, regardless of the mutation rate map.In effect, the mutation rate map given is intersected with the coverage area of the genomic elements defined; areas outside of any genomic element are given a mutation rate of zero.There is no harm in supplying a mutation rate map that specifies rates for areas outside of the genomic elements defined; that rate information is simply not used.TheoverallMutationRatefamily of properties onChromosomeprovide the overall mutation rate after genomic element coverage has been taken into account, so it will reflect the rate at which new mutations will actually be generated in the simulation as configured.\n\nIf the optionalsexparameter is\"*\"(the default), then the supplied mutation rate map will be used for both sexes (which is the only option for hermaphroditic simulations).In sexual simulationssexmay be\"M\"or\"F\"instead, in which case the supplied mutation rate map is used only for that sex (i.e., when generating a gamete from a parent of that sex).In this case, two calls must be made toinitializeMutationRate(), one for each sex, even if a rate of zero is desired for the other sex; no default mutation rate map is supplied.\n\nIn nucleotide-based models,initializeMutationRate()may not be called.Instead, the desired sequence-based mutation rate(s) should be expressed in themutationMatrixparameter toinitializeGenomicElementType().If variation in the mutation rate along the chromosome is desired,initializeHotspotMap()should be used.\n\n"
+        "signature": "(void)initializeMutationRate(numeric rates, [Ni ends = NULL], [string$ sex = \"*\"])",
+        "description": "Sets mutation rate per base per gamete. Can specify rates for different regions and sexes."
     },
     "initializeMutationType": {
-        "signature": "(object<MutationType>$)initializeMutationType(is$ id, numeric$ dominanceCoeff, string$ distributionType, ...)",
-        "description": "Add a mutation type at initialization time.Theidmust not already be used for any mutation type in the simulation.Theidparameter may be either anintegergiving the ID of the new mutation type, or astringgiving the name of the new mutation type (such as\"m5\"to specify an ID of 5).The dominanceCoeff parameter supplies the dominance coefficient for the mutation type;0.0produces no dominance,1.0complete dominance, and values greater than1.0, overdominance.ThedistributionTypemay be\"f\", in which case the ellipsis...should supply anumeric$fixed selection coefficient;\"e\", in which case the ellipsis should supply anumeric$mean selection coefficient for an exponential distribution;\"g\", in which case the ellipsis should supply anumeric$mean selection coefficient and anumeric$alpha shape parameter for a gamma distribution;\"n\", in which case the ellipsis should supply anumeric$mean selection coefficient and anumeric$sigma (standard deviation) parameter for a normal distribution;\"p\", in which case the ellipsis should supply anumeric$mean selection coefficient and anumeric$scale parameter for a Laplace distribution;\"w\", in which case the ellipsis should supply anumeric$λscale parameter and anumeric$k shape parameter for a Weibull distribution; or\"s\", in which case the ellipsis should supply astring$Eidos script parameter.The global symbol for the new mutation type is immediately available; the return value also provides the new object.\n\nNote that by default in WF models, all mutations of a given mutation type will be converted intoSubstitutionobjects when they reach fixation, for efficiency reasons.If you need to disable this conversion, to keep mutations of a given type active in the simulation even after they have fixed, you can do so by setting theconvertToSubstitutionproperty ofMutationTypetoF.In contrast, by default in nonWF models mutations will not be converted intoSubstitutionobjects when they reach fixation;convertToSubstitutionisFby default in nonWF models.To enable conversion in nonWF models for neutral mutation types with no indirect fitness effects, you should therefore setconvertToSubstitutiontoT.\n\n"
+        "signature": "(object<MutationType>$)initializeMutationType(is$ id, numeric$ dominanceCoeff, string$ distributionType, ...)",
+        "description": "Adds mutation type with dominance and selection effects. Distribution types: f(fixed), e(exponential), g(gamma), n(normal), p(laplace), w(weibull), s(script)."
     },
     "initializeMutationTypeNuc": {
-        "signature": "(object<MutationType>$)initializeMutationTypeNuc(is$ id, numeric$ dominanceCoeff, string$ distributionType, ...)",
-        "description": "Add a nucleotide-based mutation type at initialization time.This function is identical toinitializeMutationType()except that the new mutation type will be nucleotide-based – in other words, mutations belonging to the new mutation type will have an associated nucleotide.This function may be called only in nucleotide-based models (as enabled by thenucleotideBasedparameter toinitializeSLiMOptions()).\n\nNucleotide-based mutations always use amutationStackGroupof-1and amutationStackPolicyof\"l\".This ensures that a new nucleotide mutation always replaces any previously existing nucleotide mutation at a given position, regardless of the mutation types of the nucleotide mutations.These values are set automatically byinitializeMutationTypeNuc(), and may not be changed.\n\nSee the documentation forinitializeMutationType()for all other discussion.\n\n"
+        "signature": "(object<MutationType>$)initializeMutationTypeNuc(is$ id, numeric$ dominanceCoeff, string$ distributionType, ...)",
+        "description": "Adds nucleotide-based mutation type. Same as initializeMutationType but for nucleotide models only."
     },
     "initializeRecombinationRate": {
-        "signature": "(void)initializeRecombinationRate(numeric rates, [Ni ends = NULL], [string$ sex = \"*\"])",
-        "description": "Set the recombination rate per base position per gamete.To be precise, this recombination rate is the probability that a breakpoint will occur between one base and the next base; note that this is different from how the mutation rate is defined (seeinitializeMutationRate()).A recombination rate of 1 centimorgan/Mbp corresponds to a recombination rate of1e-8in the units used by SLiM.All rates must be in the interval [0.0,0.5].A rate of0.5implies complete independence between the adjacent bases, which might be used to implement independent assortment of loci located on different chromosomes (see the example below).Whether a breakpoint occurs between two bases is then, in effect, determined by a binomial draw with a single trial and the given rate as probability (but under the hood SLiM uses a mathematically equivalent but much more efficient strategy).The recombinational process in SLiM will never generate more then one crossover between one base and the next (in one generation/genome), and a supplied rate of0.5will therefore result in an actual probability of0.5for a crossover at the relevant position.(Note that this was not true in SLiM 2.x and earlier, however; their implementation of recombination resulted in a crossover probability of about 39.3% for a rate of0.5, due to the use of an inaccurate approximation method.Recombination rates lower than about0.01would have been essentially exact, since the approximation error became large only as the rate approached0.5.)\n\nThere are two ways to call this function.If the optionalendsparameter isNULL(the default), thenratesmust be a singleton value that specifies a single recombination rate to be used along the entire chromosome.If, on the other hand,endsis supplied, thenratesandendsmust be the same length, and the values inendsmust be specified in ascending order.In that case,ratesandendstaken together specify the recombination rates to be used along successive contiguous stretches of the chromosome, from beginning to end; the last position specified inendsshould extend to the end of the chromosome (i.e. at least to the end of the last genomic element, if not further).\n\nFor example, if the following call is made:\n\ninitializeRecombinationRate(c(0, 0.5, 0), c(5000, 5001, 9999));\n\nthen the result is that the recombination rates between bases0/1,1/2, ...,4999/5000will be0, the rate between bases5000/5001will be0.5, and the rate between bases5001/5002onward (up to9998/9999) will again be0.Setting the recombination rate between one specific pair of bases to0.5forces recombination to occur with a probability of0.5between those bases, which effectively breaks the simulated locus into separate chromosomes at that point; this example effectively has one simulated chromosome from base position0to5000, and another from5001to9999.\n\nIf the optionalsexparameter is\"*\"(the default), then the supplied recombination rate map will be used for both sexes (which is the only option for hermaphroditic simulations).In sexual simulationssexmay be\"M\"or\"F\"instead, in which case the supplied recombination map is used only for that sex.In this case, two calls must be made toinitializeRecombinationRate(), one for each sex, even if a rate of zero is desired for the other sex; no default recombination map is supplied.\n\n"
+        "signature": "(void)initializeRecombinationRate(numeric rates, [Ni ends = NULL], [string$ sex = \"*\"])",
+        "description": "Sets recombination rate per base per gamete. Can specify rates for different regions and sexes."
     },
     "initializeSex": {
-        "signature": "(void)initializeSex(string$ chromosomeType)",
-        "description": "Enable and configure sex in the simulation.The argumentchromosomeTypegives the type of chromosome to be simulated; this should be\"A\",\"X\", or\"Y\".Calling this function has the side effect of enabling sex in the simulation; individuals will be male and female (rather than hermaphroditic) regardless of thechromosomeTypechosen for simulation.There is no way to disable sex once it has been enabled; if you don’t want to have sex, don’t call this function.\n\nThexDominanceCoeffparameter has been deprecated and removed.In SLiM 3.7 and later, use thehaploidDominanceCoeffproperty ofMutationTypeinstead.If thechromosomeTypeis\"X\", the optionalxDominanceCoeffparameter can supply the dominance coefficient used when a mutation is present in an XY male, and is thus “heterozygous” (but in a different sense than the heterozygosity of an XX female with one copy of the mutation).\n\n"
+        "signature": "(void)initializeSex(string$ chromosomeType)",
+        "description": "Enables and configures sex in simulation. Chromosome types: A, X, or Y. Makes individuals male/female instead of hermaphroditic."
     },
     "initializeSLiMModelType": {
-        "signature": "(void)initializeSLiMModelType(string$ modelType)",
-        "description": "Configure the type of SLiM model used for the simulation.At present, one of two model types may be selected.IfmodelTypeis\"WF\", SLiM will use a Wright-Fisher (WF) model; this is the model type that has always been supported by SLiM, and is the model type used ifinitializeSLiMModelType()is not called.IfmodelTypeis\"nonWF\", SLiM will use a non-Wright-Fisher (nonWF) model instead; this is a new model type supported by SLiM 3.0 and above.\n\nIfinitializeSLiMModelType()is called at all then it must be called before any other initialization function, so that SLiM knows from the outset which features are enabled and which are not.\n\n"
+        "signature": "(void)initializeSLiMModelType(string$ modelType)",
+        "description": "Sets model type to WF (Wright-Fisher) or nonWF. Must be called before other initialization."
     },
     "initializeSLiMOptions": {
-        "signature": "(void)initializeSLiMOptions([logical$ keepPedigrees = F], [string$ dimensionality = \"\"], [string$ periodicity = \"\"], [integer$ mutationRuns = 0], [logical$ preventIncidentalSelfing = F], [logical$ nucleotideBased = F], [logical$ randomizeCallbacks = T])",
-        "description": "Configure options for the simulation.IfinitializeSLiMOptions()is called at all then it must be called before any other initialization function (exceptinitializeSLiMModelType()), so that SLiM knows from the outset which optional features are enabled and which are not.\n\nIfkeepPedigreesisT, SLiM will keep pedigree information for every individual in the simulation, tracking the identity of its parents and grandparents.This allows individuals to assess their degree of pedigree-based relatedness to other individuals (seeIndividual’srelatedness()andsharedParentCount()methods), as well as allowing a model to find “trios” (two parents and an offspring they generated) using the pedigree properties ofIndividual.As a side effect ofkeepPedigreesbeingT, thepedigreeID,pedigreeParentIDs, andpedigreeGrandparentIDsproperties ofIndividualwill have defined values, as will thegenomePedigreeIDproperty ofGenome.Note that pedigree-based relatedness doesn’t necessarily correspond to genetic relatedness, due to effects such as assortment and recombination.Beginning in SLiM 3.5,keepPedigrees=Talso enables tracking of individual reproductive output, available through thereproductiveOutputproperty ofIndividualand thelifetimeReproductiveOutputproperty ofSubpopulation.\n\nIfdimensionalityis not\"\", SLiM will enable its optional “continuous space” facility.Three values fordimensionalityare presently supported:\"x\",\"xy\", and\"xyz\", specifying that continuous space should be enabled for one, two, or three dimensions, respectively, using (x), (x,y), and (x,y,z) coordinates respectively.This has a number of side effects.First of all, it means that the specified properties ofIndividual(x,y, and/orz) will be interpreted by SLiM as spatial positions; in particular, SLiMgui will use those properties to display subpopulations spatially.Second, it allows spatial interactions to be defined, evaluated, and queried usinginitializeInteractionType()andinteraction()callbacks.And third, it enables the use of any other properties and methods related to continuous space, such as setting the spatial boundaries of subpopulations, which would otherwise raise an error.\n\nIfperiodicityis not\"\", SLiM will designate the specified spatial dimensions as being periodic – wrapping around at the edges of the spatial boundaries of that dimension.This option may only be used if thedimensionalityparameter toinitializeSLiMOptions()has been used to enable spatiality in the model, and only spatial dimensions that were specified in the dimensionality of the model may be declared to be periodic (but if desired, it is permissible to make just a subset of those dimensions periodic; it is not an all-or-none proposition).For example, if the specified dimensionality is\"xy\", the model’s periodicity may be\"x\",\"y\", or\"xy\"(or\"\", the default, to specify that there are no periodic dimensions).A one-dimensional periodic model would model a space like the perimeter of a circle.A two-dimensional model periodic in one of those dimensions would model a space like a cylinder without its end caps; if periodic in both dimensions, the modeled space is a torus.The shapes of three-dimensional periodic models are harder to visualize, but are essentially higher-dimensional analogues of these concepts.Periodic boundary conditions are commonly used to model spatial scenarios without “edge effects”, since there are no edges in the periodic spatial dimensions.ThepointPeriodic()method ofSubpopulationis typically used in conjunction with this option, to actually implement the periodic boundary condition for the specified dimensions.\n\nIfmutationRunsis not0, SLiM will use the value given as the number of mutation runs insideGenomeobjects; if it is0(the default), SLiM will calculate a number of mutation runs that it estimates will work well.Internally, SLiM divides genomes into a sequence of consecutive mutation runs, allowing more efficient internal computations.The optimal mutation run length is short enough that each mutation run is relatively unlikely to be modified by mutation/recombination events when inherited, but long enough that each mutation run is likely to contain a relatively large number of mutations; these priorities are in tension, so an intermediate balance between them is generally desirable.The optimal number of mutation runs will depend upon the machine and even the compiler used to build SLiM, so SLiM’s default value may not be optimal; for maximal performance it can thus be beneficial to experiment with different values and find the optimal value for the simulation.Specifying the number of mutation runs is an advanced technique, but in certain cases it can improve performance significantly; in particular, if a simulation involves a very long chromosome but only a small portion of that chromosome is actually used by the simulation, it may be beneficial to specify that a single mutation run be used withmutationRuns=1.\n\nIfpreventIncidentalSelfingisT, incidental selfing in hermaphroditic models will be prevented by SLiM.By default (i.e., ifpreventIncidentalSelfingisF), SLiM chooses the first and second parents in a biparental mating event independently.It is therefore possible for the same individual to be chosen as both the first and second parent, resulting in selfing events even when the selfing rate is zero.In many models this is unimportant, since it happens fairly infrequently and does not have large consequences.This behavior is SLiM’s default because it is the simplest option, and produces results that most closely align with simple analytical population genetics models.However, in some models this selfing can be undesirable and problematic.In particular, models that involve very high variance in fitness or very small effective population sizes may see elevated rates of selfing that substantially influence model results.IfpreventIncidentalSelfingis set toT, all such incidental selfing will be prevented (by choosing a new second parent if the first parent was chosen again).Non-incidental selfing, as requested by the selfing rate, will still be permitted.Note that if incidental selfing is prevented, SLiM will hang if it is unable to find a different second parent; there must always be at least two individuals in the population with non-zero fitness, andmateChoice()andmodifyChild()callbacks must not absolutely prevent those two individuals from producing viable offspring.Enforcement of the prohibition on incidental selfing will occur aftermateChoice()callbacks have been called (and thus the default mating weights provided tomateChoice()callbacks willnotexclude the first parent!), but will occur beforemodifyChild()callbacks are called (so those callbacks may assume that the first and second parents are distinct).\n\nIfnucleotideBasedisT, the model will be nucleotide-based.In this case, auto-generated mutations (i.e., mutation types used by genomic element types) must be nucleotide-based, and an ancestral nucleotide sequence must be supplied withinitializeAncestralNucleotides().Non-nucleotide-based mutations may still be used, but may not be referenced by genomic element types.A mutation rate (or rate map) may not be supplied withinitializeMutationRate(); instead, a hotspot map may (optionally) be supplied withinitializeHotspotMap().This choice has many consequences across SLiM.\n\nIfrandomizeCallbacksisT(the default), the order in which individuals are processed in callbacks will be randomized to make it easier to avoid order-dependency bugs.This flag exists because the order of individuals in each subpopulation is non-random; most notably, females always come before males in the individuals vector, but non-random ordering may also occur with respect to things like migrant versus non-migrant status, origin by selfing versus cloning versus biparental mating, and other factors.When this option isF, individuals in a subpopulation are processed in the order of the individuals vector in each tick cycle stage, which may lead to order-dependency issues if there is an enabled callback whose behavior is not fully independent between calls.Setting this option toTwill cause individuals within each subpopulation to be processed in a randomized order in each tick cycle stage; specifically, this randomizes the order of calls tomutationEffect()callbacks in both WF and nonWF models, and calls toreproduction()andsurvival()callbacks in nonWF models.Each subpopulation is still processed separately, in sequential order, so order-dependency issues between subpopulations are still possible if callbacks have effects that are not fully independent.This feature was added in SLiM 4, breaking backward compatibility; to recover the behavior of previous versions of SLiM, passFfor this option (but then be very careful about order-dependency issues in your script).The default ofTis the safe option, but a small speed penalty is incurred by the randomization of the processing order – for most models the difference will be less than 1%, but in the worst case it may approach 10%.Models that do not have any order-dependency issue may therefore run somewhat faster if this is set toF.Note that anywhere that your script uses theindividualsproperty ofSubpopulation, the order of individuals returned will be non-random (regardless of the setting of this option); you should usesample()to shuffle the order of the individuals vector if necessary to avoid order-dependency issues in your script.\n\nThis function will likely be extended with further options in the future, added on to the end of the argument list.Using named arguments with this call is recommended for readability.Note that turning on optional features may increase the runtime and memory footprint of SLiM.\n\n"
+        "signature": "(void)initializeSLiMOptions([logical$ keepPedigrees = F], [string$ dimensionality = \"\"], [string$ periodicity = \"\"], [integer$ mutationRuns = 0], [logical$ preventIncidentalSelfing = F], [logical$ nucleotideBased = F], [logical$ randomizeCallbacks = T])",
+        "description": "Configures simulation options: pedigree tracking, spatial dimensions, periodicity, mutation runs, selfing prevention, nucleotide basis, callback randomization."
     },
     "initializeSpecies": {
-        "signature": "(void)initializeSpecies([integer$ tickModulo = 1], [integer$ tickPhase = 1], [string$ avatar = \"\"], [string$ color = \"\"])",
-        "description": "Configure options for the species being initialized.This initialization function may only be called in multispecies models (i.e., models with explicit species declarations); in single-species models, the default values are assumed and cannot be changed.\n\nThetickModuloandtickPhaseparameters determine the activation schedule for the species.Theactiveproperty of the species will be set toT(thus activating the species) everytickModuloticks, beginning in ticktickPhase.(However, when the species is activated in a given tick, theskipTick()method may still be called in afirst()event to deactivate it.)See theactiveproperty ofSpeciesfor more details.\n\nTheavatarparameter, if not\"\", sets astringvalue used to represent the species graphically, particularly in SLiMgui but perhaps in other contexts also.Theavatarshould generally be a single character – usually an emoji corresponding to the species, such as\"🦊\"for foxes or\"🐭\"for mice.Ifavataris the empty string,\"\", SLiMgui will choose a default avatar.\n\nThecolorparameter, if not\"\", sets astringcolor value used to represent the species in SLiMgui.Colors may be specified by name, or with hexadecimal RGB values of the form\"#RRGGBB\"(see the Eidos manual for details).Ifcoloris the empty string,\"\", SLiMgui will choose a default color.\n\n"
+        "signature": "(void)initializeSpecies([integer$ tickModulo = 1], [integer$ tickPhase = 1], [string$ avatar = \"\"], [string$ color = \"\"])",
+        "description": "Configures species options: activation schedule, visual representation. For multispecies models only."
     },
     "initializeTreeSeq": {
-        "signature": "(void)initializeTreeSeq([logical$ recordMutations = T], [Nif$ simplificationRatio = NULL], [Ni$ simplificationInterval = NULL], [logical$ checkCoalescence = F], [logical$ runCrosschecks = F], [logical$retainCoalescentOnly= T], [Ns$ timeUnit = NULL])",
-        "description": "Configure options for tree sequence recording.Calling this function turns on tree sequence recording, as a side effect, for later reconstruction of the simulation’s evolutionary dynamics; if you do not want tree sequence recording to be enabled, do not call this function. Note that tree-sequence recording internally uses SLiM’s “pedigree tracking” feature to uniquely identify individuals and genomes; however, if you want to use pedigree tracking in your script you must still enable it yourself withinitializeSLiMOptions(keepPedigrees=T).\n\nTherecordMutationsflag controls whether information about individual mutations is recorded or not.Such recording takes time and memory, and so can be turned off if only the tree sequence itself is needed, but it is turned on by default since mutation recording is generally useful.\n\nThesimplificationRatioandsimplificationIntervalparameters control how often automatic simplification of the recorded tree sequence occurs.This is a speed–memory tradeoff: more frequent simplification (lowersimplificationRatioor smallersimplificationInterval) means the stored tree sequences will use less memory, but at a cost of somewhat longer run times.Conversely, a largersimplificationRatioorsimplificationIntervalmeans that SLiM will wait longer between simplifications.There are three ways these parameters can be used.With the first option, with a non-NULLsimplificationRatioand aNULLvalue forsimplificationInterval, SLiM will try to find an optimal tick interval for simplification such that the ratio of the memory used by the tree sequence tables, (before:after) simplification, is close to the requested ratio. The default of10(used if bothsimplificationRatioandsimplificationIntervalareNULL) thus requests that SLiM try to find a tick interval such that the maximum size of the stored tree sequences is ten times the size after simplification.INFmay be supplied to indicate that automatic simplification should never occur;0may be supplied to indicate that automatic simplification should be performed at the end of every tick.Alternatively – the second option –simplificationRatiomay beNULLandsimplificationIntervalmay be set to the interval, in ticks, between simplifications.This may provide more reliable performance, but the interval must be chosen carefully to avoid exceeding the available memory.ThesimplificationIntervalvalue may be a very large number to specify that simplification should never occur (notINF, though, since it is anintegervalue), or1to simplify every tick.Finally – the third option – both parameters may be non-NULL, in which casesimplificationRatiois used as described above, whilesimplificationIntervalprovides theinitialinterval first used by SLiM (and then subsequently increased or decreased to try to match the requested simplification ratio).The default initial interval, used whensimplificationIntervalisNULL, is usually20; this is chosen to be relatively frequent, and thus unlikely to lead to a memory overflow, but it can result in rather slow spool-up for models where the equilibrium simplification interval, as determined by the simplification ratio, is much longer.It can therefore be helpful to set a larger initial interval so that the early part of the model run is not excessively bogged down in simplification.\n\nThecheckCoalescenceparameter controls whether a check for full coalescence is conducted after each simplification.If a model will calltreeSeqCoalesced()to check for coalescence during its execution,checkCoalescenceshould be set toT.Since the coalescence checks entail a performance penalty, the default ofFis preferable otherwise.See the documentation fortreeSeqCoalesced()for further discussion.\n\nTherunCrosschecksparameter controls whether cross-checks between SLiM’s internal data structures and the tree-sequence recording data structures will be conducted.These two sets of data structures record much the same thing (mutations in genomes), but using completely different representations, so such cross-checks can be useful to confirm that the two data structures do indeed represent the same conceptual state.This slows down the model considerably, however, and would normally be turned on only for debugging purposes, so it is turned off by default.\n\nTheretainCoalescentOnlyparameter controls how, exactly, simplification of the tree-sequence data is performed in SLiM (both for auto-simplification and for calls totreeSeqSimplify()).More specifically, this parameter controls the behavior of simplification for individuals and genomes that have been “retained” by callingtreeSeqRememberIndividuals()with the parameterpermanent=F.The default ofretainCoalescentOnly=Thelps to keep the number of retained individuals relatively small, which is helpful if your simulation regularly flags many individuals for retaining.In this case, changingretainCoalescentOnlytoFmay dramatically increase memory usage and runtime, in a similar way to permanently remembering all the individuals.See the documentation oftreeSeqRememberIndividuals()for further discussion.\n\nThetimeUnitparameter controls the time unit stated in the tree sequence when it is saved (which can be accessed throughtskitAPIs); it has no effect on the running simulation whatsoever.The default value,NULL, means that a time unit of\"ticks\"will be used for all model types.(In SLiM 3.7 / 3.7.1,NULLimplied a time unit of\"generations\"for WF models, but\"ticks\"for nonWF models; given the new multispecies timescale parameters in SLiM 4, a default of\"ticks\"makes sense in all cases since now even in WF models one tick might not equal one biological generation.)It may be helpful to settimeUnitto\"generations\"explicitly when modeling non-overlapping generations in which one tick equals one generation, to telltskitthat the time unit does in fact represent biological generations; doing so may avoid warnings fromtskitormsprimeregarding the time unit, in cases such as recapitation where the simulation timescale is important.\n\n3.2.Nucleotide utilities\n\n"
+        "signature": "(void)initializeTreeSeq([logical$ recordMutations = T], [Nif$ simplificationRatio = NULL], [Ni$ simplificationInterval = NULL], [logical$ checkCoalescence = F], [logical$ runCrosschecks = F], [logical$ retainCoalescentOnly = T], [Ns$ timeUnit = NULL])",
+        "description": "Configures tree sequence recording options: mutation recording, simplification schedule, coalescence checking, crosschecks, retention policy."
     },
-    "codonsToAminoAcids": {
-        "signature": "(is)codonsToAminoAcids(integer codons, [li$ long = F], [logical$ paste = T])",
-        "description": "Returns the amino acid sequence corresponding to the codon sequence incodons.Codons should be represented with values in [0,63] where AAA is0, AAC is1, AAG is2, and TTT is63; seeancestralNucleotides()for discussion of this encoding.IflongisF(the default), the standard single-letter codes for amino acids will be used (where Serine is\"S\", etc.); iflongisT, the standard three-letter codes will be used instead (where Serine is\"Ser\", etc.).Beginning in SLiM 3.5, iflongis0,integercodes will be used as follows (andpastewill be ignored):\n\nstop (TAA, TAG, TGA)0Alanine1Arginine2Asparagine3Aspartic acid (Aspartate)4Cysteine5Glutamine6Glutamic acid (Glutamate)7Glycine8Histidine9Isoleucine10Leucine11Lysine12Methionine13Phenylalanine14Proline15Serine16Threonine17Tryptophan18Tyrosine19Valine20\n\nThere does not seem to be a widely used standard for integer coding of amino acids, so SLiM just numbers them alphabetically, making stop codons0.If you want a different coding, you can make your own 64-element vector and use it to convert codons to whatever integer codes you need.Otherintegervalues oflongare reserved for future use (to support other codings), and will currently produce an error.\n\nWhenlongisTorFandpasteisT(the default), the amino acid sequence returned will be a singletonstring, such as\"LYATI\"(whenlongisF) or\"Leu-Tyr-Ala-Thr-Ile\"(whenlongisT).WhenlongisTorFandpasteisF, the amino acid sequence will instead be returned as astringvector, with one element per amino acid, such as\"L\" \"Y\" \"A\" \"T\" \"I\"(whenlongisF) or\"Leu\" \"Tyr\" \"Ala\" \"Thr\" \"Ile\"(whenlongisT).Using thepaste=Toption is considerably faster than usingpaste()in script.\n\nThis function interprets the supplied codon sequence as thesensestrand (i.e., the strand that isnottranscribed, and which mirrors the mRNA’s sequence).This uses the standard DNA codon table directly.For example, if the nucleotide sequence is CAA TTC, that will correspond to a codon vector of16 61, and will result in the amino acid sequence Gln-Phe (\"QF\").\n\n"
-    },
+
+
+    "// === Nucleotide Utility Functions ===": {},
+
+    
     "codonsToNucleotides": {
-        "signature": "(is)codonsToNucleotides(integer codons, [string$ format = \"string\"])",
-        "description": "Returns the nucleotide sequence corresponding to the codon sequence supplied incodons.Codons should be represented with values in [0,63] where AAA is0, AAC is1, AAG is2, and TTT is63; seeancestralNucleotides()for discussion of this encoding.\n\nTheformatparameter controls the format of the returned sequence.It may be\"string\"to obtain the sequence as a singletonstring(e.g.,\"TATACG\"),\"char\"to obtain it as astringvector of single characters (e.g.,\"T\",\"A\",\"T\",\"A\",\"C\",\"G\"), or\"integer\"to obtain it as anintegervector (e.g.,3,0,3,0,1,2), using SLiM’s standard code of A=0, C=1, G=2, T=3."
+        "signature": "(is)codonsToNucleotides(integer codons, [string$ format = \"string\"])",
+        "description": "Returns the nucleotide sequence corresponding to the codon sequence. Codons use values 0-63 (AAA=0, AAC=1, AAG=2, TTT=63). Format options: 'string' for singleton string, 'char' for string vector, 'integer' for integer vector using A=0,C=1,G=2,T=3."
     },
     "mm16To256": {
-        "signature": "(float)mm16To256(float$ mutationMatrix16)",
-        "description": "Returns a 64×4 mutation matrix that is functionally identical to the supplied 4×4 mutation matrix in mutationMatrix16.The mutation rate for each of the 64 trinucleotides will depend only upon the central nucleotide of the trinucleotide, and will be taken from the corresponding entry for the same nucleotide in mutationMatrix16.This function can be used to easily construct a simple trinucleotide-based mutation matrix which can then be modified so that specific trinucleotides sustain a mutation rate that does not depend only upon their central nucleotide.\n\nSee the documentation forinitializeGenomicElementType()for further discussion of how these 64×4 mutation matrices are interpreted and used.\n\n"
+        "signature": "(float)mm16To256(float$ mutationMatrix16)",
+        "description": "Converts 4×4 mutation matrix to 64×4 matrix where trinucleotide rates depend on central nucleotide. Useful for creating simple trinucleotide-based mutation matrices that can be further modified for specific trinucleotide rates."
     },
     "mmJukesCantor": {
-        "signature": "(float)mmJukesCantor(float$ alpha)",
-        "description": "Returns a mutation matrix representing a Jukes–Cantor (1969) model with mutation ratealphato each possible alternative nucleotide at a site.This 2×2 matrix is suitable for use withinitializeGenomicElementType().Note that the actual mutation rate produced by this matrix is3*alpha.\n\n"
+        "signature": "(float)mmJukesCantor(float$ alpha)",
+        "description": "Creates Jukes-Cantor (1969) mutation matrix with rate alpha to each alternative nucleotide. Suitable for initializeGenomicElementType(). Total mutation rate is 3*alpha."
     },
     "mmKimura": {
-        "signature": "(float)mmKimura(float$ alpha, float$ beta)",
-        "description": "Returns a mutation matrix representing a Kimura (1980) model with transition ratealphaand transversion ratebeta.This 2×2 matrix is suitable for use withinitializeGenomicElementType().Note that the actual mutation rate produced by this model isalpha+2*beta.\n\n(integer)nucleotideCounts(is sequence)\n\nA convenience function that returns anintegervector of length four, providing the number of occurrences of A / C / G / T nucleotides, respectively, in the supplied nucleotide sequence.The parameter sequence may be a singletonstring(e.g.,\"TATA\"), astringvector of single characters (e.g.,\"T\",\"A\",\"T\",\"A\"), or anintegervector (e.g., 3,0,3,0), using SLiM’s standard code of A=0, C=1, G=2, T=3.\n\n(float)nucleotideFrequencies(is sequence)\n\nA convenience function that returns afloatvector of length four, providing the frequencies of occurrences of A / C / G / T nucleotides, respectively, in the supplied nucleotide sequence.The parameter sequence may be a singletonstring(e.g.,\"TATA\"), astringvector of single characters (e.g.,\"T\",\"A\",\"T\",\"A\"), or anintegervector (e.g., 3,0,3,0), using SLiM’s standard code of A=0, C=1, G=2, T=3.\n\n(integer)nucleotidesToCodons(is sequence)\n\nReturns the codon sequence corresponding to the nucleotide sequence insequence.The codon sequence is anintegervector with values from0to63, based upon successive nucleotide triplets in the nucleotide sequence.The codon value for a given nucleotide triplet XYZ is 16X + 4Y + Z, where X, Y, and Z have the usual values A=0, C=1, G=2, T=3.For example, the triplet AAA has a codon value of0, AAC is1, AAG is2, AAT is3, ACA is4, and on upward to TTT which is63.If the nucleotide sequence AACACATTT is passed in, the codon vector1 4 63will therefore be returned.These codon values can be useful in themselves; they can also be passed tocodonsToAminoAcids()to translate them into the corresponding amino acid sequence if desired.\n\nThe nucleotide sequence insequencemay be supplied in any of three formats: astringvector with single-letter nucleotides (e.g.,\"T\",\"A\",\"T\",\"A\"), a singletonstringof nucleotide letters (e.g.,\"TATA\"), or anintegervector of nucleotide values (e.g.,3,0,3,0) using SLiM’s standard code of A=0, C=1, G=2, T=3.If the choice of format is not driven by other considerations, such as ease of manipulation, then the singletonstringformat will certainly be the most memory-efficient for long sequences, and will probably also be the fastest.The nucleotide sequence provided must be a multiple of three in length, so that it translates to an integral number of codons.\n\n"
+        "signature": "(float)mmKimura(float$ alpha, float$ beta)",
+        "description": "Creates Kimura (1980) mutation matrix with transition rate alpha and transversion rate beta. Suitable for initializeGenomicElementType(). Total mutation rate is alpha+2*beta."
+    },
+    "nucleotideCounts": {
+        "signature": "(integer)nucleotideCounts(is sequence)",
+        "description": "Returns integer vector [4] counting A/C/G/T occurrences in sequence. Accepts singleton string, string vector, or integer vector (A=0,C=1,G=2,T=3)."
+    },
+    "nucleotideFrequencies": {
+        "signature": "(float)nucleotideFrequencies(is sequence)",
+        "description": "Returns float vector [4] with A/C/G/T frequencies in sequence. Accepts singleton string, string vector, or integer vector (A=0,C=1,G=2,T=3)."
+    },
+    "nucleotidesToCodons": {
+        "signature": "(integer)nucleotidesToCodons(is sequence)",
+        "description": "Converts nucleotide sequence to codon values 0-63. Codon XYZ value is 16X + 4Y + Z (X,Y,Z using A=0,C=1,G=2,T=3). Accepts string vector, singleton string, or integer vector. Sequence length must be multiple of 3."
     },
     "randomNucleotides": {
-        "signature": "(is)randomNucleotides(integer$ length, [Nif basis = NULL], [string$ format = \"string\"])",
-        "description": "Generates a new random nucleotide sequence withlengthbases.The four nucleotides ACGT are equally probable ifbasisisNULL(the default); otherwise,basismay be a 4-elementintegerorfloatvector providing relative fractions for A, C, G, and T respectively (these need not sum to1.0, as they will be normalized).More complex generative models such as Markov processes are not supported intrinsically in SLiM at this time, but arbitrary generated sequences may always be loaded from files on disk.\n\nTheformatparameter controls the format of the returned sequence.It may be\"string\"to obtain the generated sequence as a singletonstring(e.g.,\"TATA\"),\"char\"to obtain it as astringvector of single characters (e.g.,\"T\",\"A\",\"T\",\"A\"), or\"integer\"to obtain it as anintegervector (e.g.,3,0,3, 0), using SLiM’s standard code of A=0, C=1, G=2, T=3.For passing directly toinitializeAncestralNucleotides(), format\"string\"(a singleton string) will certainly be the most memory-efficient, and probably also the fastest.Memory efficiency can be a significant consideration; the nucleotide sequence for a chromosome of length 109will occupy approximately 1 GB of memory when stored as a singleton string (with one byte per nucleotide), and much more if stored in the other formats.However, the other formats can be easier to work with in Eidos, and so may be preferable for relatively short chromosomes if you are manipulating the generated sequence.\n\n3.3.Population genetics utilities\n\n"
+        "signature": "(is)randomNucleotides(integer$ length, [Nif basis = NULL], [string$ format = \"string\"])",
+        "description": "Generates random nucleotide sequence of given length. With NULL basis uses equal ACGT probabilities, or specify 4-element vector of relative frequencies. Format options: 'string' (most efficient), 'char' (string vector), or 'integer' (A=0,C=1,G=2,T=3)."
     },
+
+
+
+    "// === Population Genetics Utility Functions ===": {},
+
+
     "calcFST": {
-        "signature": "(float$)calcFST(object<Genome> genomes1, object<Genome> genomes2, [No<Mutation> muts = NULL], [Ni$ start = NULL], [Ni$ end = NULL])",
-        "description": "Calculates theFSTbetween twoGenomevectors – typically, but not necessarily, the genomes that constitute two different subpopulations (which we will assume for the purposes of this discussion).In general, higherFSTindicates greater genetic divergence between subpopulations.\n\nThe calculation is done using only the mutations inmuts; ifmutsisNULL, all mutations are used.Themutsparameter can therefore be used to calculate theFSTonly for a particular mutation type (by passing only mutations of that type).\n\nThe calculation can be narrowed to apply to only a window – a subrange of the full chromosome – by passing the interval bounds [start,end] for the desired window.In this case, the vector of mutations used for the calculation will be subset to include only mutations within the specified window.The default behavior, withstartandendofNULL, provides the genome-wideFST, which is often used to assess the overall level of genetic divergence between sister species or allopatric subpopulations.\n\nThe code forcalcFST()is, roughly, an Eidos implementation of Wright’s definition ofFST(but see below for further discussion and clarification):\n\nFST= 1 -HS/HT\n\nwhereHSis the average heterozygosity in the two subpopulations, andHTis the total heterozygosity when both subpopulations are combined.In this implementation, the two genome vectors are weighted equally, not weighted by their size.In SLiM 3, the implementation followed Wright’s definition closely, and returned theaverage of ratios:mean(1.0 - H_s/H_t), in the Eidos code.In SLiM 4, it returns theratio of averagesinstead:1.0 - mean(H_s)/mean(H_t).In other words, theFSTvalue reported by SLiM 4 is an average across the specified mutations in the two sets of genomes, whereH_sandH_tare first averaged across all specified mutations prior to taking the ratio of the two.This ratio of averages is less biased than the average of ratios, and and is generally considered to be best practice (see, e.g., Bhatia et al., 2013).This means that the behavior ofcalcFST()differs between SLiM 3 and SLiM 4.\n\nThe implementation ofcalcFST(), viewable withfunctionSource(), treats every mutation inmutsas independent in the heterozygosity calculations; in other words, if mutations are stacked, the heterozygosity calculated isby mutation, notby site.Similarly, if multipleMutationobjects exist in different genomes at the same site (whether representing different genetic states, or multiple mutational lineages for the same genetic state), eachMutationobject is treated separately for purposes of the heterozygosity calculation, just as if they were at different sites.One could regard these choices as embodying an infinite-sites interpretation of the segregating mutations.In most biologically realistic models, such genetic states will be quite rare, and so the impact of these choices will be negligible; however, in some models these distinctions may be important.\n\n"
+        "signature": "(float$)calcFST(object<Genome> genomes1, object<Genome> genomes2, [No<Mutation> muts = NULL], [Ni$ start = NULL], [Ni$ end = NULL])",
+        "description": "Calculates FST between two genome vectors, indicating genetic divergence between subpopulations. Uses Wright's FST formula (1 - HS/HT) where HS is average subpopulation heterozygosity and HT is total heterozygosity. In SLiM 4, returns ratio of averages (1.0 - mean(H_s)/mean(H_t)) rather than average of ratios. Supports windowed analysis with start/end parameters."
     },
     "calcHeterozygosity": {
-        "signature": "(float$)calcHeterozygosity(object<Genome> genomes, [No<Mutation> muts = NULL], [Ni$ start = NULL], [Ni$ end = NULL])",
-        "description": "Calculates the heterozygosity for a vector of genomes, based upon the frequencies of mutations in the genomes.The result is theexpectedheterozygosity, for the individuals to which the genomes belong, assuming that they are under Hardy-Weinberg equilibrium; this can be compared to theobservedheterozygosity of an individual, as calculated bycalcPairHeterozygosity().Oftengenomeswill be all of the genomes in a subpopulation, or in the entire population, but any genome vector may be used.By default, withmuts=NULL, the calculation is based upon all mutations in the simulation; the calculation can instead be based upon a subset of mutations, such as mutations of a specific mutation type, by passing the desired vector of mutations formuts.\n\nThe calculation can be narrowed to apply to only a window – a subrange of the full chromosome – by passing the interval bounds [start,end] for the desired window.In this case, the vector of mutations used for the calculation will be subset to include only mutations within the specified window.The default behavior, withstartandendofNULL, provides the genome-wide heterozygosity.\n\nThe implementation ofcalcHeterozygosity(), viewable withfunctionSource(), treats every mutation as independent in the heterozygosity calculations.One could regard this choice as embodying an infinite-sites interpretation of the segregating mutations.In most biologically realistic models, such genetic states will be quite rare, and so the impact of this choice will be negligible; however, in some models this distinction may be important.SeecalcPairHeterozygosity()for further discussion.\n\n"
+        "signature": "(float$)calcHeterozygosity(object<Genome> genomes, [No<Mutation> muts = NULL], [Ni$ start = NULL], [Ni$ end = NULL])",
+        "description": "Calculates expected heterozygosity for genome vector under Hardy-Weinberg equilibrium. Can analyze specific mutations or genomic windows. Treats mutations independently using infinite-sites interpretation."
     },
     "calcInbreedingLoad": {
-        "signature": "(float$)calcInbreedingLoad(object<Genome> genomes, [No<MutationType>$ mutType = NULL])",
-        "description": "Calculates inbreeding load (the haploid number of lethal equivalents, orB) for a vector of genomes passed ingenomes.The calculation can be limited to a focal mutation type passed inmutType; ifmutTypeisNULL(the default), all of the mutations for the focal species will be considered.In any case, only deleterious mutations (those with a negative selection coefficient) will be included in the final calculation.\n\nThe inbreeding load is a measure of the quantity of recessive deleterious variation that is heterozygous in a population and can contribute to fitness declines under inbreeding.This function implements the following equation from Morton et al. (1956), which assumes no epistasis and random mating:\n\nB= sum(qs) − sum(q2s) − 2sum(q(1−q)sh)\n\nwhereqis the frequency of a given deleterious allele,sis the absolute value of the selection coefficient, andhis its dominance coefficient.Note that the implementation sets a maximum |s| of1.0(i.e., a lethal allele); |s| can sometimes be greater than1.0whensis drawn from a distribution, but in practice an allele withs<-1.0has the same lethal effect as whens=-1.0.Also note that this implementation will not work when the model changes the dominance coefficients of mutations usingmutationEffect()callbacks, since it relies on thedominanceCoeffproperty ofMutationType. Finally, note that, to estimate the diploid number of lethal equivalents (2B), the result from this function can simply be multiplied by two.\n\nThis function was contributed by Chris Kyriazis; thanks, Chris!\n\n"
+        "signature": "(float$)calcInbreedingLoad(object<Genome> genomes, [No<MutationType>$ mutType = NULL])",
+        "description": "Calculates haploid inbreeding load (B) using Morton et al. (1956) equation: B = sum(qs) − sum(q2s) − 2sum(q(1−q)sh). Considers only deleterious mutations, caps |s| at 1.0. Multiply by 2 for diploid load. Requires static dominance coefficients."
     },
     "calcPairHeterozygosity": {
-        "signature": "(float$)calcPairHeterozygosity(object<Genome>$ genome1, object<Genome>$ genome2, [Ni$ start = NULL], [Ni$ end = NULL], [logical$ infiniteSites = T])",
-        "description": "Calculates the heterozygosity for a pair of genomes; these will typically be the two genomes of a diploid individual (individual.genome1andindividual.genome2), but any two genomes may be supplied.\n\nThe calculation can be narrowed to apply to only a window – a subrange of the full chromosome – by passing the interval bounds [start,end] for the desired window.In this case, the vector of mutations used for the calculation will be subset to include only mutations within the specified window.The default behavior, withstartandendofNULL, provides the genome-wide heterozygosity.\n\nThe implementation ofcalcPairHeterozygosity(), viewable withfunctionSource(), treats every mutation as independent in the heterozygosity calculations by default (i.e., withinfiniteSites=T).If mutations are stacked, the heterozygosity calculated therefore depends upon the number ofunshared mutations, not the number ofdiffering sites.Similarly, if multipleMutationobjects exist in different genomes at the same site (whether representing different genetic states, or multiple mutational lineages for the same genetic state), eachMutationobject is treated separately for purposes of the heterozygosity calculation, just as if they were at different sites.One could regard these choices as embodying an infinite-sites interpretation of the segregating mutations.In most biologically realistic models, such genetic states will be quite rare, and so the impact of this choice will be negligible; however, in some models this distinction may be important.The behavior ofcalcPairHeterozygosity()can be switched to calculate based upon the number of differing sites, rather than the number of unshared mutations, by passinginfiniteSites=F.\n\n"
+        "signature": "(float$)calcPairHeterozygosity(object<Genome>$ genome1, object<Genome>$ genome2, [Ni$ start = NULL], [Ni$ end = NULL], [logical$ infiniteSites = T])",
+        "description": "Calculates heterozygosity between two genomes, typically from a diploid individual. With infiniteSites=T (default) counts unshared mutations; with F counts differing sites. Supports windowed analysis."
     },
     "calcPi": {
-        "signature": "(float$)calcPi(object<Genome> genomes, [No<Mutation> muts = NULL], [Ni$ start = NULL], [Ni$ end = NULL])",
+        "signature": "(float$)calcPi(object<Genome> genomes, [No<Mutation> muts = NULL], [Ni$ start = NULL], [Ni$ end = NULL])",
         "description": "Calculatesπ(a metric of genetic diversity based on pairwise sequence differences) for a vector of genomes, based upon the mutations in the genomes.The mathematical formulation (as an estimator of the population parameterθ) is based on work in Nei and Li (1979), Nei and Tajima (1981), and Tajima (1983; equation A3).The exact formula used here is common in textbooks (e.g., equation 3.3 in Hahn 2018, or equation 2.2 in Coop 2020).This value is averaged by the number of sites.\n\nOftengenomeswill be all of the genomes in a subpopulation, or in the entire population, but any genome vector may be used.By default, withmuts=NULL, the calculation is based upon all mutations in the simulation; the calculation can instead be based upon a subset of mutations, such as mutations of a specific mutation type, by passing the desired vector of mutations formuts.\n\nThe calculation can be narrowed to apply to only a window – a subrange of the full chromosome – by passing the interval bounds [start,end] for the desired window.In this case, the vector of mutations used for the calculation will be subset to include only mutations within the specified window.The default behavior, withstartandendofNULL, provides the genome-wide value ofπ.\n\nThe implementation ofcalcPi(), viewable withfunctionSource(), treats every mutation as independent in the heterozygosity calculations.One could regard this choice as embodying an infinite-sites interpretation of the segregating mutations, as withcalcHeterozygosity().Indeed, finite-sites models ofπhave been derived (Tajima 1996) though are not used here.In most biologically realistic models, such genetic states will be quite rare, and so the impact of this assumption will be negligible; however, in some models this distinction may be important.SeecalcPairHeterozygosity()for further discussion.This function was written by Nick Bailey (currently affiliated with CNRS and the Laboratory of Biometry and Evolutionary Biology at University Lyon 1), with helpful input from Peter Ralph.\n\n"
     },
     "calcTajimasD": {
-        "signature": "(float$)calcTajimasD(object<Genome> genomes, [No<Mutation> muts = NULL], [Ni$ start = NULL], [Ni$ end = NULL])",
-        "description": "Calculates Tajima’sD(a test of neutrality based on the allele frequency spectrum) for a vector of genomes, based upon the mutations in the genomes.The mathematical formulation is given in Tajima 1989 (equation 38) and remains unchanged (e.g., equations 2.30 in Durrett 2008, 8.4 in Hahn 2018, and 4.44 in Coop 2020).Oftengenomeswill be all of the genomes in a subpopulation, or in the entire population, but any genome vector may be used.By default, withmuts=NULL, the calculation is based upon all mutations in the simulation; the calculation can instead be based upon a subset of mutations, such as mutations of a specific mutation type, by passing the desired vector of mutations formuts.\n\nThe calculation can be narrowed to apply to only a window – a subrange of the full chromosome – by passing the interval bounds [start,end] for the desired window.In this case, the vector of mutations used for the calculation will be subset to include only mutations within the specified window.The default behavior, withstartandendofNULL, provides the genome-wide Tajima’sD.\n\nThe implementation ofcalcTajimasD(), viewable withfunctionSource(), treats every mutation as independent in the heterozygosity calculations.One could regard this choice as embodying an infinite-sites interpretation of the segregating mutations, as withcalcHeterozygosity().Indeed, Tajima’sDcan be modified with finite-sites models ofπandθ(Misawa and Tajima 1997) though these are not used here.In most biologically realistic models, such genetic states will be quite rare, and so the impact of this assumption will be negligible; however, in some models this distinction may be important.SeecalcPairHeterozygosity()for further discussion.This function was written by Nick Bailey (currently affiliated with CNRS and the Laboratory of Biometry and Evolutionary Biology at University Lyon 1), with helpful input from Peter Ralph.\n\n"
+        "signature": "(float$)calcTajimasD(object<Genome> genomes, [No<Mutation> muts = NULL], [Ni$ start = NULL], [Ni$ end = NULL])",
+        "description": "Calculates Tajima'sD(a test of neutrality based on the allele frequency spectrum) for a vector of genomes, based upon the mutations in the genomes.The mathematical formulation is given in Tajima 1989 (equation 38) and remains unchanged (e.g., equations 2.30 in Durrett 2008, 8.4 in Hahn 2018, and 4.44 in Coop 2020).Oftengenomeswill be all of the genomes in a subpopulation, or in the entire population, but any genome vector may be used.By default, withmuts=NULL, the calculation is based upon all mutations in the simulation; the calculation can instead be based upon a subset of mutations, such as mutations of a specific mutation type, by passing the desired vector of mutations formuts.\n\nThe calculation can be narrowed to apply to only a window – a subrange of the full chromosome – by passing the interval bounds [start,end] for the desired window.In this case, the vector of mutations used for the calculation will be subset to include only mutations within the specified window.The default behavior, withstartandendofNULL, provides the genome-wide Tajima'sD.\n\nThe implementation ofcalcTajimasD(), viewable withfunctionSource(), treats every mutation as independent in the heterozygosity calculations.One could regard this choice as embodying an infinite-sites interpretation of the segregating mutations, as withcalcHeterozygosity().Indeed, Tajima'sDcan be modified with finite-sites models ofπandθ(Misawa and Tajima 1997) though these are not used here.In most biologically realistic models, such genetic states will be quite rare, and so the impact of this assumption will be negligible; however, in some models this distinction may be important.SeecalcPairHeterozygosity()for further discussion.This function was written by Nick Bailey (currently affiliated with CNRS and the Laboratory of Biometry and Evolutionary Biology at University Lyon 1), with helpful input from Peter Ralph.\n\n"
     },
     "calcWattersonsTheta": {
-        "signature": "(float$)calcWattersonsTheta(object<Genome> genomes, [No<Mutation> muts = NULL], [Ni$ start = NULL], [Ni$ end = NULL])",
-        "description": "Calculates Watterson’s theta (a metric of genetic diversity comparable to heterozygosity) for a vector of genomes, based upon the mutations in the genomes.Oftengenomeswill be all of the genomes in a subpopulation, or in the entire population, but any genome vector may be used.By default, withmuts=NULL, the calculation is based upon all mutations in the simulation; the calculation can instead be based upon a subset of mutations, such as mutations of a specific mutation type, by passing the desired vector of mutations formuts.\n\nThe calculation can be narrowed to apply to only a window – a subrange of the full chromosome – by passing the interval bounds [start,end] for the desired window.In this case, the vector of mutations used for the calculation will be subset to include only mutations within the specified window.The default behavior, withstartandendofNULL, provides the genome-wide Watterson’s theta.\n\nThe implementation ofcalcWattersonsTheta(), viewable withfunctionSource(), treats every mutation as independent in the heterozygosity calculations.One could regard this choice as embodying an infinite-sites interpretation of the segregating mutations, as withcalcHeterozygosity().In most biologically realistic models, such genetic states will be quite rare, and so the impact of this assumption will be negligible; however, in some models this distinction may be important.SeecalcPairHeterozygosity()for further discussion.\n\n"
+        "signature": "(float$)calcWattersonsTheta(object<Genome> genomes, [No<Mutation> muts = NULL], [Ni$ start = NULL], [Ni$ end = NULL])",
+        "description": "Calculates Watterson's theta (a metric of genetic diversity comparable to heterozygosity) for a vector of genomes, based upon the mutations in the genomes.Oftengenomeswill be all of the genomes in a subpopulation, or in the entire population, but any genome vector may be used.By default, withmuts=NULL, the calculation is based upon all mutations in the simulation; the calculation can instead be based upon a subset of mutations, such as mutations of a specific mutation type, by passing the desired vector of mutations formuts.\n\nThe calculation can be narrowed to apply to only a window – a subrange of the full chromosome – by passing the interval bounds [start,end] for the desired window.In this case, the vector of mutations used for the calculation will be subset to include only mutations within the specified window.The default behavior, withstartandendofNULL, provides the genome-wide Watterson's theta.\n\nThe implementation ofcalcWattersonsTheta(), viewable withfunctionSource(), treats every mutation as independent in the heterozygosity calculations.One could regard this choice as embodying an infinite-sites interpretation of the segregating mutations, as withcalcHeterozygosity().In most biologically realistic models, such genetic states will be quite rare, and so the impact of this assumption will be negligible; however, in some models this distinction may be important.SeecalcPairHeterozygosity()for further discussion.\n\n"
     },
     "calcVA": {
-        "signature": "(float$)calcVA(object<Individual> individuals, io<MutationType>$ mutType)",
-        "description": "CalculatesVA, the additive genetic variance, among a vectorindividuals, in a particular mutation typemutTypethat represents quantitative trait loci (QTLs) influencing a quantitative phenotypic trait.ThemutTypeparameter may be either anintegerrepresenting the ID of the desired mutation type, or aMutationTypeobject specified directly.\n\nThis function assumes that mutations of typemutTypeencode their effect size upon the quantitative trait in theirselectionCoeffproperty, as is fairly standard in SLiM.The implementation ofcalcVA(), which is viewable withfunctionSource(), is quite simple; if effect sizes are stored elsewhere (such as withsetValue()), a new user-defined function following the pattern ofcalcVA()can easily be written.\n\n3.4.Other utilities\n\n"
+        "signature": "(float$)calcVA(object<Individual> individuals, io<MutationType>$ mutType)",
+        "description": "CalculatesVA, the additive genetic variance, among a vectorindividuals, in a particular mutation typemutTypethat represents quantitative trait loci (QTLs) influencing a quantitative phenotypic trait.ThemutTypeparameter may be either anintegerrepresenting the ID of the desired mutation type, or aMutationTypeobject specified directly.\n\nThis function assumes that mutations of typemutTypeencode their effect size upon the quantitative trait in theirselectionCoeffproperty, as is fairly standard in SLiM.The implementation ofcalcVA(), which is viewable withfunctionSource(), is quite simple; if effect sizes are stored elsewhere (such as withsetValue()), a new user-defined function following the pattern ofcalcVA()can easily be written.\n\n"
     },
+
+
+    "// === Other Utility Functions ===": {},
     "summarizeIndividuals": {
-        "signature": "(float)summarizeIndividuals(object<Individual> individuals, integer dim, numeric spatialBounds, string$ operation, [Nlif$ empty = 0.0], [logical$ perUnitArea = F], [Ns$ spatiality = NULL])",
-        "description": "Returns a vector, matrix, or array that summarizes spatial patterns of information related to the individuals inindividuals.In essence, those individuals are assigned intobinsaccording to their spatial position, and then a summary value for each bin is calculated based upon the individuals each bin contains.The individuals might be binned in one dimension (resulting in a vector of summary values), in two dimensions (resulting in a matrix), or in three dimensions (resulting in an array).Typically the spatiality of the result (the dimensions into which the individuals are binned) will match the dimensionality of the model, as indicated by the default value ofNULLfor the optionalspatialityparameter; for example, a two-dimensional (\"xy\") model would by default produce a two-dimensional matrix as a summary.However, a spatiality that is more restrictive than the model dimensionality may be passed; for example, in a two-dimensional (\"xy\") model aspatialityof\"y\"could be passed to summarize individuals into a vector, rather than a matrix, assigning them to bins based only upon theiryposition (i.e., the value of theiryproperty).Whatever spatiality is chosen, the parameterdimprovides the dimensions of the desired result, in the same form that thedim()function does: first the number of rows, then the number of columns, and then the number of planes, as needed (see the Eidos manual for discussion of matrices, arrays, anddim()).The length ofdimsmust match the requested spatiality; for spatiality\"xy\", for example,dimsmight bec(50,100)to request that the returned matrix have50rows and100columns.The result vector/matrix/array is in the correct orientation to be directly usable as a spatial map, by passing it to thedefineSpatialMap()method ofSubpopulation.For further discussion of dimensionality and spatiality, seeinitializeInteractionType()andInteractionType.\n\nThespatialBoundsparameter defines the spatial boundaries within which the individuals are binned.Typically this is the spatial bounds of a particular subpopulation, within which the individuals reside; for individuals inp1, for example, you would likely passp1.spatialBoundsfor this.However, this is not required; individuals may come from any or all subpopulations in the model, andspatialBoundsmay be any bounds of non-zero area (if an individual falls outside of the given spatial bounds, it is excluded, as if it were not inindividualsat all).If you have multiple subpopulations that conceptually reside within the same overall coordinate space, for example, that can be accommodated here.The bounds are supplied in the dimensionality of the model, in the same form as forSubpopulation; for an\"xy\"model, for example, they are supplied as a four-element vector of the formc(x0, y0, x1, y1)even if the summary is being produced with spatiality\"y\".To produce the result, a grid with dimensions defined bydimsis conceptually stretched out across the given spatial bounds, such that thecentersof the edge and corner grid squares are aligned with the limits of the spatial bounds.This matches the way thatdefineSpatialMap()defines its maps.\n\nThe particular summary produced depends upon the parametersoperationandempty.Consider a single grid square represented by a single element in the result.That grid square contains zero or more of the individuals inindividuals.If it contains zero individualsandemptyis notNULL, theemptyvalue is used for the result, regardless ofoperation, providing specific, separate control over the treatment of empty grid squares.IfemptyisNULL, this separate control over the treatment of empty grid squares is declined; empty grid squares will be handled through the standard mechanism described next.In all other cases for the given grid square – when it contains more than zero individuals, or whenemptyisNULL–operationis executed as an Eidoslambda, a small snippet of code, supplied as a singletonstring, that is executed in a manner similar to a function call.Within the execution of theoperationlambda, a constant namedindividualsis defined to be the focal individuals being evaluated – all of the individuals within that grid square.This lambda should evaluate to a singletonlogical,integer, orfloatvalue, comprising the result value for the grid square; these types will all be coerced tofloat(Tbeing1andFbeing0).\n\nTwo examples may illustrate the use ofemptyandoperation.To produce a summary indicating presence/absence, simply use the default of0.0forempty, and\"1.0;\"(or\"1;\", or\"T;\") foroperation.This will produce0.0for empty grid squares, and1.0for those that contain at least one individual.Note that the use ofemptyis essential here, becauseoperationdoesn’t even check whether individuals are present or not.To produce a summary with a count of the number of individuals in each grid square, again use the default of0.0forempty, but now use anoperationof\"individuals.size();\", counting the number of individuals in each grid square.In this case,emptycould beNULLinstead andoperationwould still produce the correct result; but usingemptymakessummarizeIndividuals()more efficient since it allows the execution ofoperationto be skipped for those squares.\n\nLambdas are not limited in their complexity; they can useif,for, etc., and can call methods and functions.A typicaloperationto compute the mean phenotype in a quantitative genetic model that stores phenotype values intagF, for example, would be\"mean(individuals.tagF);\", and this is still quite simple compared to what is possible.However, keep in mind that the lambda will be evaluated for every grid cell (or at least those that are non-empty), so efficiency can be a concern, and you may wish to pre-calculate values shared by all of the lambda calls, making them available to your lambda code usingdefineGlobal()ordefineConstant().\n\nThere is one last twist, ifperUnitAreaisT: values are divided by the area (or length, in 1D, or volume, in 3D) that their corresponding grid cell comprises, so that each value is in units of “per unit area” (or “per unit length”, or “per unit volume”).The total area of the grid is defined by the spatial bounds, and the area of a given grid cell is defined by the portion of the spatial bounds that is within that cell.This is not the same for all grid cells; grid cells that fall partially outsidespatialBounds(because, remember, thecentersof the edge/corner grid cells are aligned with the limits ofspatialBounds) will have a smaller area inside the bounds.For an\"xy\"spatiality summary, for example, corner cells have only a quarter of their area insidespatialBounds, while edge elements have half of their area insidespatialBounds; for purposes ofperUnitArea, then, their respective areas are ¼ and ½ the area of an interior grid cell.By default,perUnitAreaisF, and no scaling is performed.Whether you wantperUnitAreato beForTdepends upon whether the summary you are producing is, conceptually, “per unit area”, such as density (individuals per unit area) or local competition strength (total interaction strength per unit area), or is not, such as “mean individual age”, or “maximumtagvalue”.For the previous example of counting individuals with an operation of\"individuals.size();\", a value ofFforperUnitArea(the default) will produce a simplecountof individuals in each grid square, whereas withTit would produce thedensityof individuals in each grid square.\n\n"
+        "signature": "(float)summarizeIndividuals(object<Individual> individuals, integer dim, numeric spatialBounds, string$ operation, [Nlif$ empty = 0.0], [logical$ perUnitArea = F], [Ns$ spatiality = NULL])",
+        "description": "Returns a vector, matrix, or array summarizing spatial patterns of individuals. Bins individuals by spatial position and calculates summary values per bin. Result dimensionality matches model dimensionality by default. Supports 1D (vector), 2D (matrix), or 3D (array) outputs. spatialBounds defines binning area, operation lambda determines summary calculation, empty controls empty bin values, and perUnitArea enables per-unit-area scaling."
     },
     "treeSeqMetadata": {
-        "signature": "(object<Dictionary>$)treeSeqMetadata(string$ filePath, [logical$ userData = T])",
-        "description": "Returns aDictionarycontaining top-level metadata from the.trees(tree-sequence) file atfilePath.IfuserDataisT(the default), the top-level metadata under theSLiM/user_metadatakey is returned; this is the same metadata that can optionally be supplied totreeSeqOutput()in itsmetadataparameter, so it makes it easy to recover metadata that you attached to the tree sequence when it was saved.IfuserDataisF, the entire top-level metadataDictionaryobject is returned; this can be useful for examining the values of other keys under theSLiMkey, or values inside the top-level dictionary itself that might have been placed there bymsprimeor other software.\n\nThis function can be used to read in parameter values or other saved state (tagproperty values, for example), in order to resuscitate the complete state of a simulation that was written to a.treesfile.It could be used for more esoteric purposes too, such as to search through.treesfiles in a directory (with the help of the Eidos functionfilesAtPath()) to find those files that satisfy some metadata criterion.\n\n"
+        "signature": "(object<Dictionary>$)treeSeqMetadata(string$ filePath, [logical$ userData = T])",
+        "description": "Returns metadata Dictionary from .trees file. With userData=T (default), returns SLiM/user_metadata content matching treeSeqOutput() metadata. With userData=F, returns complete top-level metadata Dictionary. Useful for recovering simulation state or searching tree sequence files by metadata."
+    },
+
+    "// === Random Functions (these may be out of order or out of date)===": {},
+    
+    "setActive": {
+        "signature": "(void)setActive(logical$ active)",
+        "description": "Sets whether this species is active in the simulation. When a species is inactive, its individuals do not reproduce or undergo selection, but they remain in memory and can be reactivated later."
+    },
+    "active": {
+        "signature": "(logical$)active()",
+        "description": "Returns whether this species is currently active in the simulation."
+    },
+    "tickModulo": {
+        "signature": "(integer$)tickModulo()",
+        "description": "Returns the tick modulo value for this species, which determines how frequently (in generations) the species participates in the simulation cycle."
+    },
+    "tickPhase": {
+        "signature": "(integer$)tickPhase()",
+        "description": "Returns the tick phase value for this species, which determines the offset (in generations) from generation 0 at which the species begins participating in the simulation cycle."
+    },
+    "values": {
+        "signature": "(float)values([Ni$ start = NULL], [Ni$ end = NULL])",
+        "description": "Returns the values in the spatial map. If start and end are provided, returns only the values for the specified range of positions. Otherwise returns all values."
+    },
+    "setValues": {
+        "signature": "(void)setValues(float values, [Ni$ start = NULL], [Ni$ end = NULL])",
+        "description": "Sets the values in the spatial map. If start and end are provided, sets only the values for the specified range of positions. Otherwise sets all values."
+    },
+    "dimensionality": {
+        "signature": "(string$)dimensionality()",
+        "description": "Returns the dimensionality of the spatial map as a string (e.g., \"x\", \"xy\", or \"xyz\")."
+    },
+    "gridSize": {
+        "signature": "(integer$)gridSize()",
+        "description": "Returns the size of the grid used by the spatial map in each dimension."
+    },
+    "spatiality": {
+        "signature": "(string$)spatiality()",
+        "description": "Returns the spatiality of the map, indicating which spatial dimensions are used (e.g., \"x\", \"xy\", or \"xyz\")."
+    },
+    "valueAt": {
+        "signature": "(float$)valueAt(float position)",
+        "description": "Returns the interpolated value of the spatial map at the specified position. The length of the position parameter must match the map's dimensionality."
+    },
+    "setValueAt": {
+        "signature": "(void)setValueAt(float position, float$ value)",
+        "description": "Sets the value of the spatial map at the specified position. The length of the position parameter must match the map's dimensionality."
+    },
+    "spatialBounds": {
+        "signature": "(float)spatialBounds()",
+        "description": "Returns the spatial bounds of the map as a vector. For 1D maps returns c(x0,x1), for 2D maps returns c(x0,y0,x1,y1), and for 3D maps returns c(x0,y0,z0,x1,y1,z1)."
+    },
+
+    "recalculateFitness": {
+        "signature": "(void)recalculateFitness()",
+        "description": "Forces an immediate recalculation of fitness values for all individuals in the simulation. This is useful when fitness values need to be updated outside of SLiM's normal fitness calculation cycle."
+    },
+
+
+    "outputFasta": {
+        "signature": "(void)outputFasta(string$ filePath, [logical$ simplify = T])",
+        "description": "Outputs sequences in FASTA format. If simplify is T, outputs the simplified sequence state; if F, outputs the full mutation state."
+    },
+    "outputFixedMutations": {
+        "signature": "(void)outputFixedMutations(string$ filePath, [logical$ append = F])",
+        "description": "Outputs all fixed mutations to a file. If append is T, appends to existing file; if F, overwrites it. Each line contains the mutation's position, selection coefficient, and fixation generation."
+    },
+    "outputFull": {
+        "signature": "(void)outputFull(string$ filePath, [logical$ binary = F])",
+        "description": "Outputs the complete state of the simulation, including all individuals, mutations, and metadata. If binary is T, outputs in binary format for efficiency; if F, outputs in text format for readability."
+    },
+    "xy": {
+        "signature": "(float)xy()",
+        "description": "Returns a two-element float vector containing the x and y coordinates of the individual. Useful in complex spatial models where the spatiality of interactions/maps differs from the overall dimensionality of the model."
+    },
+    "xyz": {
+        "signature": "(float)xyz()",
+        "description": "Returns a three-element float vector containing the x, y, and z coordinates of the individual. Useful in complex spatial models where the spatiality of interactions/maps differs from the overall dimensionality of the model."
+    },
+    "xz": {
+        "signature": "(float)xz()",
+        "description": "Returns a two-element float vector containing the x and z coordinates of the individual. Useful in complex spatial models where the spatiality of interactions/maps differs from the overall dimensionality of the model."
+    },
+    "yz": {
+        "signature": "(float)yz()",
+        "description": "Returns a two-element float vector containing the y and z coordinates of the individual. Useful in complex spatial models where the spatiality of interactions/maps differs from the overall dimensionality of the model."
+    },
+    "addSubpopulation": {
+        "signature": "(object<Subpopulation>)addSubpopulation(integer$ subpopID, integer$ size)",
+        "description": "Creates and adds a new subpopulation to the simulation with the specified ID and initial size. Returns the newly created Subpopulation object."
+    },
+
+    "subpopulationByID": {
+        "signature": "(object<Subpopulation>$)subpopulationByID(integer$ subpopID)",
+        "description": "Returns the Subpopulation object with the specified ID. Returns NULL if no such subpopulation exists."
+    },
+    "countOfSubpopulations": {
+        "signature": "(integer$)countOfSubpopulations()",
+        "description": "Returns the number of subpopulations currently in the simulation."
+    },
+    "subpopulations": {
+        "signature": "(object<Subpopulation>)subpopulations()",
+        "description": "Returns a vector of all Subpopulation objects in the simulation."
+    },
+    "generation": {
+        "signature": "(integer$)generation()",
+        "description": "Returns the current generation number in the simulation."
+    },
+    "modelType": {
+        "signature": "(string$)modelType()",
+        "description": "Returns the type of SLiM model being used, either \"WF\" for Wright-Fisher or \"nonWF\" for non-Wright-Fisher."
+    },
+    "sexEnabled": {
+        "signature": "(logical$)sexEnabled()",
+        "description": "Returns whether sex is enabled in the simulation."
+    },
+    "spatialDimensionality": {
+        "signature": "(integer$)spatialDimensionality()",
+        "description": "Returns the number of spatial dimensions in the simulation (0, 1, 2, or 3)."
+    },
+    "nucleotideValue": {
+        "signature": "(integer$)nucleotideValue()",
+        "description": "Returns the nucleotide value (0=A, 1=C, 2=G, 3=T) for this mutation. Only valid for nucleotide-based mutations."
+    },
+    "setNucleotideValue": {
+        "signature": "(void)setNucleotideValue(integer$ value)",
+        "description": "Sets the nucleotide value (0=A, 1=C, 2=G, 3=T) for this mutation. Only valid for nucleotide-based mutations."
+    },
+    "isFixed": {
+        "signature": "(logical$)isFixed()",
+        "description": "Returns whether this mutation has fixed in the population (reached a frequency of 1.0)."
+    },
+    "originGeneration": {
+        "signature": "(integer$)originGeneration()",
+        "description": "Returns the generation in which this mutation arose."
+    },
+    "selectionCoeff": {
+        "signature": "(float$)selectionCoeff()",
+        "description": "Returns the selection coefficient of this mutation, determining its effect on fitness."
+    },
+
+    "subpopID": {
+        "signature": "(integer$)subpopID()",
+        "description": "Returns the ID of the subpopulation in which this mutation originated."
+    },
+    "position": {
+        "signature": "(integer$)position()",
+        "description": "Returns the position of this mutation in the genome."
+    },
+    "tag": {
+        "signature": "(integer$)tag()",
+        "description": "Returns the tag value associated with this mutation, which can be used to store arbitrary metadata."
+    },
+    "setTag": {
+        "signature": "(void)setTag(integer$ value)",
+        "description": "Sets the tag value associated with this mutation to the specified value."
     }
+
+
+    
+
 }
