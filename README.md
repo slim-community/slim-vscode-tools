@@ -66,12 +66,25 @@ Also adds a command to run the SLiM script in Activity Bar.
 
 Currently this extension is not published to the marketplace, so you will need to install it manually.
 
+There are a few ways to do this:
+
+You can build from source:
 1. Clone the repository
 2. Run `npm install` to install the dependencies
 3. Run `npm run package` to package the extension
-4. Copy the resulting `.vsix` file to your VS Code extensions folder
+4. Install the resulting package with `code --install-extension slim-vscode-tools-0.0.1-beta.vsix` (this assumes you've installed the `vscode` command line tool)
 
-or you can get the latest version from the [GitHub repository](https://github.com/andrewkern/slim-tools/releases) and install the `.vsix` file manually using the instruction above.
+You can use the prepackaged package from the releases:
+1. get the latest version from the [GitHub repository](https://github.com/andrewkern/slim-tools/releases)
+2. Install the `.vsix` file manually with `code --install-extension slim-vscode-tools-0.0.1-beta.vsix`
+
+Optionally you can install the `.vsix` file from within `vscode` by:
+1. Open `vscode`.
+2. Go to Extensions View by pressing Ctrl+Shift+X (Windows/Linux) or Cmd+Shift+X (Mac).
+3. Click on the More Actions (⋮) menu at the top right of the Extensions panel.
+4. Select "Install from VSIX...".
+5. Locate and select the .vsix file from your system.
+6. Click Install and wait for it to complete.
 
 ## Extension Settings
 
