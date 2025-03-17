@@ -27,30 +27,65 @@ def parse_slim_docs(html_path):
     current_class = None
     current_section = None  # 'methods' or 'properties'
     last_property = None
+    found_constructor = False
+    last_method = None
+
+    # First replace all br tags with newlines
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
 
     # Find all paragraphs
     for p in soup.find_all("p"):
         text = p.get_text().strip()
+        p_class = p.get("class", [""])[0]
 
         # Check for class headers (they typically have class names followed by "methods" or "properties")
-        if p.get("class") in [["p1"], ["p10"]]:
+        if p_class in ["p1", "p10"]:
             class_match = re.search(r"Class (\w+)", text)
             if class_match:
                 current_class = class_match.group(1)
-                result[current_class] = {"methods": {}, "properties": {}}
+                result[current_class] = {
+                    "constructor": {},
+                    "methods": {},
+                    "properties": {},
+                }
                 current_section = None
                 last_property = None
+                last_method = None
                 continue
 
-        if p.get("class") in [["p2"], ["p9"], ["p11"]]:
+        if p_class in ["p2", "p9", "p11"]:
             if "properties" in text.lower():
+                found_constructor = False
                 current_section = "properties"
+                last_method = None
             elif "methods" in text.lower():
+                found_constructor = False
                 current_section = "methods"
+                last_method = None
+            continue
+
+        # Handle constructor
+        if current_class and p_class == "p3":
+            constructor_match = re.match(
+                r"\(object<" + current_class + r">\$\)" + current_class + r"\(.*\)",
+                text,
+            )
+            if constructor_match:
+                result[current_class]["constructor"] = {
+                    "signature": text,
+                    "description": "",  # Will be filled in next paragraph
+                }
+                found_constructor = True
+                continue
+
+        # Handle constructor description
+        elif found_constructor and p_class in ["p4", "p6"] and current_class:
+            result[current_class]["constructor"]["description"] += " " + text
             continue
 
         # Handle properties
-        if current_section == "properties" and p.get("class") in [["p3"], ["p5"]]:
+        if current_section == "properties" and p_class in ["p3", "p5"]:
             property_match = re.match(
                 r"([\w\d_]+)\s*(?:<–>|&lt;–&gt;|<->|=>|\s*<span.*?>&lt;–&gt;</span>)?\s*\(([^)]+)\)",
                 text,
@@ -81,7 +116,7 @@ def parse_slim_docs(html_path):
         # Handle property descriptions
         elif (
             current_section == "properties"
-            and p.get("class") in [["p4"], ["p6"]]
+            and p_class in ["p4", "p6"]
             and current_class
             and last_property
         ):
@@ -96,7 +131,7 @@ def parse_slim_docs(html_path):
                 )
 
         # Handle methods
-        elif current_section == "methods" and p.get("class") in [["p3"], ["p5"]]:
+        elif current_section == "methods" and p_class == "p3":
             method_match = re.match(
                 r"[–+\-]\s*[\xa0 ]*\((.*?)\)\s*([\w\d_]+)\s*\((.*)\)", text
             )
@@ -109,34 +144,31 @@ def parse_slim_docs(html_path):
                     "signature": signature,
                     "description": "",  # Will be filled by next paragraph
                 }
-                print(
-                    f"✅ Found method: {method_name} in class {current_class}"
-                )  # Debugging
-            else:
-                print(f"❌ No match for: {repr(text)}")  # Show the exact raw text
+                last_method = method_name
 
-        # Handle method descriptions
+        # Handle method descriptions and examples
         elif (
             current_section == "methods"
-            and p.get("class") in [["p4"], ["p6"]]
+            and p_class in ["p4", "p5", "p6"]
+            and last_method is not None
             and current_class
+            and last_method in result[current_class]["methods"]
         ):
-            # Add description to the last added method
-            if result[current_class]["methods"]:
-                last_method = list(result[current_class]["methods"].keys())[-1]
-                result[current_class]["methods"][last_method]["description"] += (
-                    " " + text
-                )
+            # Add a newline before example code (p5) blocks
+            prefix = "\n" if p_class == "p5" else " "
+            result[current_class]["methods"][last_method]["description"] += (
+                prefix + text
+            )
 
     return result
 
 
 def main():
     # Parse the documentation
-    docs = parse_slim_docs("SLiMHelpClasses.html")
+    docs = parse_slim_docs("EidosHelpClasses.html")
 
     # Write the result to a JSON file
-    with open("slim_documentation.json", "w", encoding="utf-8") as f:
+    with open("EidosHelpClasses.json", "w", encoding="utf-8") as f:
         json.dump(docs, f, indent=4)
 
 
