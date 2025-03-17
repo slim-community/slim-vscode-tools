@@ -1,5 +1,6 @@
 {
     "Chromosome": {
+        "constructor": {},
         "methods": {
             "ancestralNucleotides": {
                 "signature": "(is)ancestralNucleotides([Ni$\u00a0start\u00a0=\u00a0NULL], [Ni$\u00a0end\u00a0=\u00a0NULL], [string$\u00a0format\u00a0=\u00a0\"string\"])",
@@ -178,6 +179,7 @@
         }
     },
     "Community": {
+        "constructor": {},
         "methods": {
             "createLogFile": {
                 "signature": "(object<LogFile>$)createLogFile(string$\u00a0filePath, [Ns\u00a0initialContents\u00a0=\u00a0NULL], [logical$\u00a0append\u00a0=\u00a0F], [logical$\u00a0compress\u00a0=\u00a0F], [string$\u00a0sep\u00a0=\u00a0\",\"], [Ni$\u00a0logInterval\u00a0=\u00a0NULL], [Ni$\u00a0flushInterval\u00a0=\u00a0NULL])",
@@ -304,6 +306,7 @@
         }
     },
     "Genome": {
+        "constructor": {},
         "methods": {
             "addMutations": {
                 "signature": "(void)addMutations(object<Mutation>\u00a0mutations)",
@@ -406,6 +409,7 @@
         }
     },
     "GenomicElement": {
+        "constructor": {},
         "methods": {
             "setGenomicElementType": {
                 "signature": "(void)setGenomicElementType(io<GenomicElementType>$\u00a0genomicElementType)",
@@ -432,6 +436,7 @@
         }
     },
     "GenomicElementType": {
+        "constructor": {},
         "methods": {
             "setMutationFractions": {
                 "signature": "(void)setMutationFractions(io<MutationType>\u00a0mutationTypes, numeric\u00a0proportions)",
@@ -474,6 +479,7 @@
         }
     },
     "Individual": {
+        "constructor": {},
         "methods": {
             "containsMutations": {
                 "signature": "(logical)containsMutations(object<Mutation>\u00a0mutations)",
@@ -636,6 +642,7 @@
         }
     },
     "InteractionType": {
+        "constructor": {},
         "methods": {
             "clippedIntegral": {
                 "signature": "(float)clippedIntegral(No<Individual>\u00a0receivers)",
@@ -742,6 +749,7 @@
         }
     },
     "LogFile": {
+        "constructor": {},
         "methods": {
             "addCustomColumn": {
                 "signature": "(void)addCustomColumn(string$\u00a0columnName, string$\u00a0source, [*\u00a0context\u00a0=\u00a0NULL])",
@@ -840,6 +848,7 @@
         }
     },
     "Mutation": {
+        "constructor": {},
         "methods": {
             "setMutationType": {
                 "signature": "(void)setMutationType(io<MutationType>$\u00a0mutType)",
@@ -898,6 +907,7 @@
         }
     },
     "MutationType": {
+        "constructor": {},
         "methods": {
             "drawSelectionCoefficient": {
                 "signature": "(float)drawSelectionCoefficient([integer$\u00a0n\u00a0=\u00a01])",
@@ -964,6 +974,7 @@
         }
     },
     "Plot": {
+        "constructor": {},
         "methods": {
             "abline": {
                 "signature": "(void)abline([Nif\u00a0a\u00a0=\u00a0NULL], [Nif\u00a0b\u00a0=\u00a0NULL], [Nif\u00a0h\u00a0=\u00a0NULL], [Nif\u00a0v\u00a0=\u00a0NULL], [string\u00a0color\u00a0=\u00a0\"red\"], [numeric\u00a0lwd\u00a0=\u00a01.0])",
@@ -1014,6 +1025,7 @@
         }
     },
     "SLiMEidosBlock": {
+        "constructor": {},
         "methods": {},
         "properties": {
             "active": {
@@ -1055,6 +1067,7 @@
         }
     },
     "SLiMgui": {
+        "constructor": {},
         "methods": {
             "createPlot": {
                 "signature": "(No<Plot>$)createPlot(string$\u00a0title, [Nif\u00a0xrange\u00a0=\u00a0NULL], [Nif\u00a0yrange\u00a0=\u00a0NULL], [string$\u00a0xlab\u00a0=\u00a0\"x\"], [string$\u00a0ylab\u00a0=\u00a0\"y\"], [Nif$\u00a0width\u00a0=\u00a0NULL], [Nif$\u00a0height\u00a0=\u00a0NULL], [logical$\u00a0horizontalGrid\u00a0=\u00a0F], [logical$\u00a0verticalGrid\u00a0=\u00a0F], [logical$\u00a0fullBox\u00a0=\u00a0T], [numeric$\u00a0axisLabelSize\u00a0=\u00a015], [numeric$\u00a0tickLabelSize\u00a0=\u00a010])",
@@ -1085,6 +1098,10 @@
         }
     },
     "SpatialMap": {
+        "constructor": {
+            "signature": "(object<SpatialMap>$)SpatialMap(string$\u00a0name, object<SpatialMap>$\u00a0map)",
+            "description": " Creates a new SpatialMap object that is a copy of map, named name."
+        },
         "methods": {
             "add": {
                 "signature": "(object<SpatialMap>$)add(ifo<SpatialMap>\u00a0x)",
@@ -1191,6 +1208,7 @@
         }
     },
     "Species": {
+        "constructor": {},
         "methods": {
             "addSubpop": {
                 "signature": "(object<Subpopulation>$)addSubpop(is$\u00a0subpopID, integer$\u00a0size, [float$\u00a0sexRatio\u00a0=\u00a00.5], [logical$\u00a0haploid\u00a0=\u00a0F])",
@@ -1385,6 +1403,7 @@
         }
     },
     "Subpopulation": {
+        "constructor": {},
         "methods": {
             "addCloned": {
                 "signature": "(object<Individual>)addCloned(object<Individual>$\u00a0parent, [integer$\u00a0count\u00a0=\u00a01], [logical$\u00a0defer\u00a0=\u00a0F])",
@@ -1607,6 +1626,7 @@
         }
     },
     "Substitution": {
+        "constructor": {},
         "methods": {},
         "properties": {
             "id": {
