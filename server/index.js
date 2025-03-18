@@ -103,6 +103,7 @@ function trackInstanceDefinitions(text) {
     const lines = text.split('\n');
     const instanceRegex = /(\w+)\s*=\s*new\s+(\w+)/; // Example: p1 = new Subpopulation
     const subpopRegex = /sim\.addSubpop\("(\w+)",\s*\d+(?:,\s*[^)]*)?\)/; // Example: sim.addSubpop("p1", 100)
+    const subpopSplitRegex = /sim\.addSubpopSplit\("(\w+)",\s*\d+(?:,\s*[^)]*)?\)/; // Example: sim.addSubpopSplit("p1", 100, ...)
 
     lines.forEach(line => {
         let match = line.match(instanceRegex);
@@ -116,6 +117,13 @@ function trackInstanceDefinitions(text) {
                 const instanceName = match[1];
                 const className = 'Subpopulation';
                 instanceDefinitions[instanceName] = className;
+            } else {
+                match = line.match(subpopSplitRegex);
+                if (match) {
+                    const instanceName = match[1];
+                    const className = 'Subpopulation';
+                    instanceDefinitions[instanceName] = className;
+                }
             }
         }
     });
