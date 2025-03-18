@@ -297,6 +297,18 @@ connection.onHover((params) => {
 
     const { word, context } = wordInfo;
 
+    // Check if it's an instance
+    if (context.instanceClass) {
+        const markdown = `**${word}** (instance of ${context.instanceClass})`;
+        console.log('Hover content:', markdown);
+        return {
+            contents: {
+                kind: "markdown",
+                value: markdown
+            }
+        };
+    }
+
     // Check if it's a method or property of a known instance
     if (context.isMethodOrProperty && (instanceToClassMap[context.className] || classesData[context.className])) {
         const className = instanceToClassMap[context.className] || context.className;
@@ -381,6 +393,51 @@ function getWordAndContextAtPosition(text, position) {
         const start = match.index;
         const end = match.index + match[0].length;
         if (position.character >= start && position.character <= end) {
+            const instanceClass = instanceDefinitions[match[0]] || instanceToClassMap[match[0]];
+            return {
+                word: match[0],
+                context: {
+                    isMethodOrProperty: false,
+                    instanceClass: instanceClass
+                }
+            };
+        }
+    }
+
+    return null;
+}
+
+function getAutocompleteContextAtPosition(text, position) {
+    const lines = text.split('\n');
+    if (position.line >= lines.length) return null;
+
+    const line = lines[position.line];
+    const lineUptoCursor = line.slice(0, position.character);
+    
+    // Regular expression to find words and their context
+    const wordRegex = /\b[a-zA-Z_][a-zA-Z0-9_]*\b/g;
+    const dotRegex = /([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*$/; // Match "instance."
+
+    // Check for method/property access pattern (e.g., "ClassName." or "object.")
+    let dotMatch = lineUptoCursor.match(dotRegex);
+    if (dotMatch) {
+        const className = instanceDefinitions[dotMatch[1]] || instanceToClassMap[dotMatch[1]] || dotMatch[1];
+        return {
+            word: '',
+            context: {
+                isMethodOrProperty: true,
+                className: className,
+                instanceName: dotMatch[1]
+            }
+        };
+    }
+
+    // Find the word at cursor position
+    let match;
+    while ((match = wordRegex.exec(lineUptoCursor)) !== null) {
+        const start = match.index;
+        const end = match.index + match[0].length;
+        if (position.character >= start && position.character <= end) {
             return {
                 word: match[0],
                 context: {
@@ -402,7 +459,7 @@ connection.onCompletion((params) => {
     trackInstanceDefinitions(text); // Track instance definitions
 
     const completions = [];
-    const wordInfo = getWordAndContextAtPosition(text, position);
+    const wordInfo = getAutocompleteContextAtPosition(text, position);
 
     if (wordInfo && wordInfo.context.isMethodOrProperty) {
         const className = wordInfo.context.className;
