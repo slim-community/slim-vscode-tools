@@ -498,6 +498,27 @@ function getAutocompleteContextAtPosition(text, position) {
     return null;
 }
 
+function extractClassConstructors(classesData) {
+    const classConstructors = {};
+    for (const className in classesData) {
+        const classInfo = classesData[className];
+        const constructorInfo = classInfo.constructor || {};
+        classConstructors[className] = {
+            signature: constructorInfo.signature && constructorInfo.signature.trim() !== '' ? constructorInfo.signature : 'None',
+            description: constructorInfo.description && constructorInfo.description.trim() !== '' ? constructorInfo.description : 'No constructor method implemented'
+        };
+    }
+    return classConstructors;
+}
+
+// Load class constructors from eidos_classes.json
+const eidosClassesData = JSON.parse(fs.readFileSync(eidosClassesPath, 'utf8'));
+const eidosClassConstructors = extractClassConstructors(eidosClassesData);
+
+// Load class constructors from slim_classes.json
+const slimClassesData = JSON.parse(fs.readFileSync(slimClassesPath, 'utf8'));
+const slimClassConstructors = extractClassConstructors(slimClassesData);
+
 connection.onCompletion((params) => {
     const document = documents.get(params.textDocument.uri);
     if (!document) return [];
@@ -576,6 +597,46 @@ connection.onCompletion((params) => {
                     title: 'Show Documentation',
                     command: 'slimTools.showFunctionDoc',
                     arguments: [funcName]
+                }
+            });
+        }
+
+        // Add Eidos class constructors to completions
+        for (const className in eidosClassConstructors) {
+            const constructorInfo = eidosClassConstructors[className];
+            completions.push({
+                label: className,
+                kind: 7, // Class completion
+                detail: constructorInfo.signature,
+                documentation: {
+                    kind: "markdown",
+                    value: `**${className}** (constructor)\n\n\`\`\`slim\n${constructorInfo.signature}\n\`\`\`\n\n${constructorInfo.description}`
+                },
+                // Add command data to show documentation
+                command: {
+                    title: 'Show Documentation',
+                    command: 'slimTools.showConstructorDoc',
+                    arguments: [className]
+                }
+            });
+        }
+
+        // Add SLiM class constructors to completions
+        for (const className in slimClassConstructors) {
+            const constructorInfo = slimClassConstructors[className];
+            completions.push({
+                label: className,
+                kind: 7, // Class completion
+                detail: constructorInfo.signature,
+                documentation: {
+                    kind: "markdown",
+                    value: `**${className}** (constructor)\n\n\`\`\`slim\n${constructorInfo.signature}\n\`\`\`\n\n${constructorInfo.description}`
+                },
+                // Add command data to show documentation
+                command: {
+                    title: 'Show Documentation',
+                    command: 'slimTools.showConstructorDoc',
+                    arguments: [className]
                 }
             });
         }
