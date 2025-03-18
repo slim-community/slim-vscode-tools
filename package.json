@@ -82,7 +82,6 @@
     "compile": "tsc -p ./",
     "watch": "tsc -p ./ --watch",
     "clean": "rimraf out dist coverage node_modules && npm cache clean --force",
-    "preclean": "npm run clean",
     "prepublish": "npm run compile",
     "package": "vsce package",
     "prepublishOnly": "rimraf out dist coverage node_modules && npm cache clean --force"
