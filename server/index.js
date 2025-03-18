@@ -104,27 +104,67 @@ function trackInstanceDefinitions(text) {
     const instanceRegex = /(\w+)\s*=\s*new\s+(\w+)/; // Example: p1 = new Subpopulation
     const subpopRegex = /sim\.addSubpop\("(\w+)",\s*\d+(?:,\s*[^)]*)?\)/; // Example: sim.addSubpop("p1", 100)
     const subpopSplitRegex = /sim\.addSubpopSplit\("(\w+)",\s*\d+(?:,\s*[^)]*)?\)/; // Example: sim.addSubpopSplit("p1", 100, ...)
+    const earlyEventRegex = /community\.registerEarlyEvent\("(\w+)",\s*[^)]*\)/; // Example: community.registerEarlyEvent("event1", ...)
+    const firstEventRegex = /community\.registerFirstEvent\("(\w+)",\s*[^)]*\)/; // Example: community.registerFirstEvent("event1", ...)
+    const interactionCallbackRegex = /community\.registerInteractionCallback\("(\w+)",\s*[^)]*\)/; // Example: community.registerInteractionCallback("event1", ...)
+    const lateEventRegex = /community\.registerLateEvent\("(\w+)",\s*[^)]*\)/; // Example: community.registerLateEvent("event1", ...)
+    const fitnessEffectCallbackRegex = /species\.registerFitnessEffectCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerFitnessEffectCallback("callback1", ...)
+    const mateChoiceCallbackRegex = /species\.registerMateChoiceCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerMateChoiceCallback("callback1", ...)
+    const modifyChildCallbackRegex = /species\.registerModifyChildCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerModifyChildCallback("callback1", ...)
+    const mutationCallbackRegex = /species\.registerMutationCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerMutationCallback("callback1", ...)
+    const mutationEffectCallbackRegex = /species\.registerMutationEffectCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerMutationEffectCallback("callback1", ...)
+    const recombinationCallbackRegex = /species\.registerRecombinationCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerRecombinationCallback("callback1", ...)
+    const reproductionCallbackRegex = /species\.registerReproductionCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerReproductionCallback("callback1", ...)
+    const survivalCallbackRegex = /species\.registerSurvivalCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerSurvivalCallback("callback1", ...)
 
     lines.forEach(line => {
-        let match = line.match(instanceRegex);
-        if (match) {
-            const instanceName = match[1];
-            const className = match[2];
-            instanceDefinitions[instanceName] = className;
-        } else {
-            match = line.match(subpopRegex);
-            if (match) {
-                const instanceName = match[1];
-                const className = 'Subpopulation';
-                instanceDefinitions[instanceName] = className;
-            } else {
-                match = line.match(subpopSplitRegex);
-                if (match) {
-                    const instanceName = match[1];
-                    const className = 'Subpopulation';
-                    instanceDefinitions[instanceName] = className;
-                }
-            }
+        let match;
+        switch (true) {
+            case (match = line.match(instanceRegex)) !== null:
+                instanceDefinitions[match[1]] = match[2];
+                break;
+            case (match = line.match(subpopRegex)) !== null:
+                instanceDefinitions[match[1]] = 'Subpopulation';
+                break;
+            case (match = line.match(subpopSplitRegex)) !== null:
+                instanceDefinitions[match[1]] = 'Subpopulation';
+                break;
+            case (match = line.match(earlyEventRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
+            case (match = line.match(firstEventRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
+            case (match = line.match(interactionCallbackRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
+            case (match = line.match(lateEventRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
+            case (match = line.match(fitnessEffectCallbackRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
+            case (match = line.match(mateChoiceCallbackRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
+            case (match = line.match(modifyChildCallbackRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
+            case (match = line.match(mutationCallbackRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
+            case (match = line.match(mutationEffectCallbackRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
+            case (match = line.match(recombinationCallbackRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
+            case (match = line.match(reproductionCallbackRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
+            case (match = line.match(survivalCallbackRegex)) !== null:
+                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                break;
         }
     });
 }
