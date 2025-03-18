@@ -17,11 +17,12 @@ const eidosFunctionsPath = path.join(__dirname, '..', 'docs', 'eidos_functions.j
 const slimClassesPath = path.join(__dirname, '..', 'docs', 'slim_classes.json');
 const eidosClassesPath = path.join(__dirname, '..', 'docs', 'eidos_classes.json');
 const slimCallbacksPath = path.join(__dirname, '..', 'docs', 'slim_callbacks.json');
+const eidosTypesPath = path.join(__dirname, '..', 'docs', 'eidos_types.json');
 
 let functionsData = {};
 let classesData = {};
 let callbacksData = {};
-
+let typesData = {};
 
 // Load all documentation files
 function loadDocumentation() {
@@ -50,6 +51,10 @@ function loadDocumentation() {
             const slimCallbacks = JSON.parse(fs.readFileSync(slimCallbacksPath, 'utf8'));
             callbacksData = { ...callbacksData, ...flattenCallbackData(slimCallbacks) }; // Update this line
             console.log('Loaded slim callbacks:', Object.keys(callbacksData));
+        }
+        if (fs.existsSync(eidosTypesPath)) {
+            typesData = JSON.parse(fs.readFileSync(eidosTypesPath, 'utf8'));
+            console.log('Loaded eidos types:', Object.keys(typesData));
         }
         console.log('✅ Server loaded documentation successfully');
     } catch (error) {
@@ -436,6 +441,19 @@ connection.onHover((params) => {
                 }
             };
         }
+    }
+
+    // Check if it's a type
+    if (typesData[word]) {
+        const typeInfo = typesData[word];
+        const markdown = `**${word}** (type)\n\n${typeInfo.description}`;
+        console.log('Hover content:', markdown);
+        return {
+            contents: {
+                kind: "markdown",
+                value: markdown
+            }
+        };
     }
 
     console.log('No hover content found for word:', word);
