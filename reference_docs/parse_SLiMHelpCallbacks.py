@@ -28,9 +28,10 @@ def parse_callback_docs(html_path):
                 r"ITEM: \d+\.\s+(.*?)\s+(callbacks|events)", text
             )
             if callback_match:
-                current_callback = f"{callback_match.group(1).strip()} {callback_match.group(2).strip()}"
+                callback_name = callback_match.group(1).strip()
+                current_callback = f"{callback_name} {callback_match.group(2).strip()}"
                 result[current_callback] = {
-                    "signature": current_callback,
+                    "signature": callback_name,
                     "description": "",
                 }
             continue

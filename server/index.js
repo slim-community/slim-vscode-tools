@@ -16,9 +16,12 @@ const slimFunctionsPath = path.join(__dirname, '..', 'docs', 'slim_functions.jso
 const eidosFunctionsPath = path.join(__dirname, '..', 'docs', 'eidos_functions.json');
 const slimClassesPath = path.join(__dirname, '..', 'docs', 'slim_classes.json');
 const eidosClassesPath = path.join(__dirname, '..', 'docs', 'eidos_classes.json');
+const slimCallbacksPath = path.join(__dirname, '..', 'docs', 'slim_callbacks.json');
 
 let functionsData = {};
 let classesData = {};
+let callbacksData = {};
+
 
 // Load all documentation files
 function loadDocumentation() {
@@ -42,6 +45,11 @@ function loadDocumentation() {
             const eidosClasses = JSON.parse(fs.readFileSync(eidosClassesPath, 'utf8'));
             classesData = { ...classesData, ...eidosClasses };
             console.log('Loaded eidos classes:', Object.keys(classesData));
+        }
+        if (fs.existsSync(slimCallbacksPath)) {
+            const slimCallbacks = JSON.parse(fs.readFileSync(slimCallbacksPath, 'utf8'));
+            callbacksData = { ...callbacksData, ...flattenCallbackData(slimCallbacks) }; // Update this line
+            console.log('Loaded slim callbacks:', Object.keys(callbacksData));
         }
         console.log('✅ Server loaded documentation successfully');
     } catch (error) {
@@ -69,6 +77,20 @@ function flattenFunctionData(data, source) {
                     };
                 }
             }
+        }
+    }
+    return flattened;
+}
+
+function flattenCallbackData(data) {
+    const flattened = {};
+    for (const callbackName in data) {
+        if (data.hasOwnProperty(callbackName)) {
+            const callbackData = data[callbackName];
+            flattened[callbackName] = {
+                ...callbackData,
+                signature: callbackData.signature.replace(/\s+(callbacks|events)$/, '')
+            };
         }
     }
     return flattened;
@@ -388,7 +410,7 @@ connection.onHover((params) => {
         }
     }
 
-    // Finally check if it's a standalone function
+    // Check if it's a standalone function
     if (functionsData[word]) {
         const functionInfo = functionsData[word];
         const markdown = `**${word}** (${functionInfo.source} function)\n\n**Return Type:** \`${functionInfo.returnType}\`\n\`\`\`slim\n${functionInfo.signature}\n\`\`\`\n\n${functionInfo.description}`;
@@ -399,6 +421,21 @@ connection.onHover((params) => {
                 value: markdown
             }
         };
+    }
+
+    // Check if it's a callback by matching the cleaned signature or the original key
+    for (const callbackName in callbacksData) {
+        const callbackInfo = callbacksData[callbackName];
+        if (callbackInfo.signature === word || callbackName.startsWith(word)) {
+            const markdown = `**${callbackName}** (callback)\n\n\`\`\`slim\n${callbackInfo.signature}\n\`\`\`\n\n${callbackInfo.description}`;
+            console.log('Hover content:', markdown);
+            return {
+                contents: {
+                    kind: "markdown",
+                    value: markdown
+                }
+            };
+        }
     }
 
     console.log('No hover content found for word:', word);
@@ -585,7 +622,7 @@ connection.onCompletion((params) => {
         for (const funcName in functionsData) {
             const functionInfo = functionsData[funcName];
             completions.push({
-                label: funcName,
+                label: functionInfo.signature, // Use the signature instead of the key
                 kind: 3, // Function completion
                 detail: functionInfo.signature,
                 documentation: {
@@ -637,6 +674,26 @@ connection.onCompletion((params) => {
                     title: 'Show Documentation',
                     command: 'slimTools.showConstructorDoc',
                     arguments: [className]
+                }
+            });
+        }
+
+        // Add SLiM callbacks to completions
+        for (const callbackName in callbacksData) {
+            const callbackInfo = callbacksData[callbackName];
+            completions.push({
+                label: callbackInfo.signature, // Use the signature instead of the key
+                kind: 3, // Function completion
+                detail: callbackInfo.signature,
+                documentation: {
+                    kind: "markdown",
+                    value: `**${callbackName}**\n\n\`\`\`slim\n${callbackInfo.signature}\n\`\`\`\n\n${callbackInfo.description}`
+                },
+                // Add command data to show documentation
+                command: {
+                    title: 'Show Documentation',
+                    command: 'slimTools.showFunctionDoc',
+                    arguments: [callbackName]
                 }
             });
         }
@@ -720,33 +777,6 @@ connection.onReferences((params) => {
     return [];
 });
 
-// Disable GoTo Definition by removing the definition handler
-// connection.onDefinition((params) => {
-//     const document = documents.get(params.textDocument.uri);
-//     if (!document) return null;
-//
-//     const position = params.position;
-//     const text = document.getText();
-//     const word = getWordAtPosition(text, position);
-//
-//     console.log(`🔍 Server looking for definition of: ${word}`);
-//     console.log(`Function exists in server: ${!!functionsData[word]}`);
-//
-//     if (functionsData[word]) {
-//         // Previously, we would send a notification and return a dummy location...
-//         connection.sendNotification('custom/showFunctionDoc', { functionName: word });
-//         console.log(`Sent custom notification for: ${word}`);
-//         
-//         return {
-//             uri: document.uri,
-//             range: {
-//                 start: position,
-//                 end: position
-//             }
-//         };
-//     }
-//
-//     return null;
-// });
+
 
 connection.listen();
