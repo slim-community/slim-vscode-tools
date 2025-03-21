@@ -758,7 +758,7 @@ connection.onSignatureHelp((params) => {
 
     const position = params.position;
     const text = document.getText();
-    const word = getWordAtPosition(text, position);
+    const word = getWordAndContextAtPosition(text, position);
 
     console.log("Signature Help Triggered for:", word);
 
