@@ -3,7 +3,7 @@
   "displayName": "slim-tools",
   "description": "language extension for the SLiM simulation package",
   "version": "0.0.2",
-  "publisher": "your-name",
+  "publisher": "andrewkern",
   "repository": {
     "type": "git",
     "url": "https://github.com/andrewkern/slim-tools.git"
