@@ -7,5 +7,9 @@ initialize() {
 }
 1 early() {
   sim.addSubpop("p1", 100);
+  Species.
 }
-1000 late() {cat("done\n");}
+// output samples of 10 genomes periodically, all fixed mutations at end
+1000 late() { p1.outputSample(10); }
+2000 late() { p1.outputSample(10); }
+2000 late() { sim.outputFixedMutations(); }

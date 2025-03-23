@@ -2,7 +2,7 @@
   "name": "slim-vscode-tools",
   "displayName": "slim-tools",
   "description": "language extension for the SLiM simulation package",
-  "version": "0.0.1-beta",
+  "version": "0.0.2",
   "publisher": "your-name",
   "repository": {
     "type": "git",
@@ -65,7 +65,7 @@
         {
           "id": "slimTools",
           "title": "SLiM",
-          "icon": "media/SLiM_vector.svg"
+          "icon": "media/SLiM_vector.png"
         }
       ]
     },
@@ -81,8 +81,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -p ./ --watch",
-    "clean": "rimraf out dist coverage node_modules && npm cache clean --force",
-    "preclean": "npm run clean",
+    "clean": "rimraf out dist coverage && npm cache clean --force",
     "prepublish": "npm run compile",
     "package": "vsce package",
     "prepublishOnly": "rimraf out dist coverage node_modules && npm cache clean --force"

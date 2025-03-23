@@ -125,4 +125,16 @@ Initial release of `slim-tools` with the following features:
 - Custom view and command to run SLiM scripts
 - Status bar integration
 
+### 0.0.2
+- Full, auto-parsed SLiM documentation now appears in an object-oriented aware way
+- Hover / autocomplete for Classes, their properties and methods, etc. 
+
+## Development notes
+
+1. First install the dependencies with `npm install`
+2. Build the project with `npm run compile`
+3. If you want to clean up and remove the compiled files, run `npm run clean`
+4. To build the `.vsix` file, run `npm run package`
+5. To run the extension in development mode, press `F5` to open a new VS Code window with the extension loaded.
+
 **Enjoy!**
