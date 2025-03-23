@@ -125,6 +125,10 @@ Initial release of `slim-tools` with the following features:
 - Custom view and command to run SLiM scripts
 - Status bar integration
 
+### 0.0.2
+- Full, auto-parsed SLiM documentation now appears in an object-oriented aware way
+- Hover / autocomplete for Classes, their properties and methods, etc. 
+
 ## Development notes
 
 1. First install the dependencies with `npm install`
