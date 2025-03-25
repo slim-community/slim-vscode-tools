@@ -1,11 +1,16 @@
 const path = require('path');
 const vscode = require('vscode');
+const fs = require('fs');
+const tmp = require('tmp');
+
 const {
   LanguageClient,
   LanguageClientOptions,
   ServerOptions,
   TransportKind
 } = require('vscode-languageclient/node');
+
+const { DocTreeProvider } = require('./docTreeProvider');
 
 let client;
 
@@ -65,9 +70,90 @@ function activate(context) {
     terminal.show();
   });
 
+  // Register the DocTreeProvider
+  const docTreeProvider = new DocTreeProvider(context);
+  vscode.window.registerTreeDataProvider('docTreeView', docTreeProvider);
+
+  const showDocCommand = vscode.commands.registerCommand('slimTools.showDocSection', async (title, docObj) => {
+    let md = `# ${title}\n\n`;
+
+    if (docObj.signature) {
+      // Clean up weird whitespace
+      const rawSig = Array.isArray(docObj.signature)
+        ? docObj.signature.join('\n')
+        : docObj.signature;
+      const cleanedSig = rawSig.replace(/\u00a0/g, ' '); // replace non-breaking spaces with normal
+
+      md += `**Signature**\n\n`;
+      md += `\`\`\`cpp\n${cleanedSig}\n\`\`\`\n\n`;
+    }
+
+    if (docObj.description) {
+      const cleanedDesc = docObj.description
+        .replace(/\u00a0/g, ' ')
+        .replace(/([.?!])\s+/g, '$1\n\n'); // turn long text into paragraphs
+      md += `**Description**\n\n${cleanedDesc}\n\n`;
+    }
+
+    const tmpFile = tmp.fileSync({ postfix: '.md' });
+    fs.writeFileSync(tmpFile.name, md);
+
+    const doc = await vscode.workspace.openTextDocument(tmpFile.name);
+    await vscode.commands.executeCommand('markdown.showPreviewToSide', doc.uri);
+  });
+
+  context.subscriptions.push(showDocCommand);
+
+
+
+
+
   // Register everything in the extension context
   context.subscriptions.push(runSlimCommand);
   context.subscriptions.push(statusBarItem);
+}
+
+function getDocHtml(title, content) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: var(--vscode-font-family);
+      padding: 1rem;
+      color: var(--vscode-editor-foreground);
+      background-color: var(--vscode-editor-background);
+    }
+    h2 {
+      color: var(--vscode-editor-foreground);
+    }
+    pre {
+      background-color: var(--vscode-editorGroupHeader-tabsBackground);
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: var(--vscode-editor-font-family);
+      font-size: var(--vscode-editor-font-size);
+      color: var(--vscode-editor-foreground);
+    }
+  </style>
+</head>
+<body>
+  <h2>${title}</h2>
+  <pre><code>${escapeHtml(content)}</code></pre>
+</body>
+</html>`;
+}
+
+// Escape special HTML characters
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function deactivate() {
