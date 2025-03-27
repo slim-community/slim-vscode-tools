@@ -18,7 +18,7 @@ Provides syntax highlighting for SLiM scripts using a TextMate grammar. This inc
 
 ### Hover Information
 
-Will show a tooltip with the function signature and complete documentation for the function for the SLiM manual.
+Will show a tooltip with the function signature and complete documentation for the function for the SLiM help system.
 
 ![Hover Information](./images/hover_over_docs.png)
 
@@ -51,6 +51,16 @@ Provides basic IntelliSense features such as auto-completion for keywords, funct
 Adds a custom view in the activity bar with a command to run SLiM scripts:
 - **Run SLiM**: Executes the currently open SLiM script using the SLiM interpreter.
 
+### Documentation Tree View
+Offers a tree view to the sidebar that shows the full hierarchy of classes, methods, properties, etc.,
+as presented in the native `SLiMgui` help system.
+The documentation pages are displayed in a heirarchical, tree view format, where opening
+subsequent tabs shows the documentation for the selected item.
+Clicking on indivual items in the tree view such as methods or properties opens the corresponding
+section of the slim documentation in a webview.
+
+![Documentation Tree View](./images/doc_view.png)
+
 ### Status Bar Integration
 Adds a status bar button to quickly run the SLiM script in the active editor.
 Also adds a command to run the SLiM script in Activity Bar.
@@ -72,11 +82,11 @@ You can build from source:
 1. Clone the repository
 2. Run `npm install` to install the dependencies
 3. Run `npm run package` to package the extension
-4. Install the resulting package with `code --install-extension slim-vscode-tools-0.0.1-beta.vsix` (this assumes you've installed the `vscode` command line tool)
+4. Install the resulting package with `code --install-extension slim-vscode-tools-<current-version-number>-.vsix` (this assumes you've installed the `vscode` command line tool)
 
 You can use the prepackaged package from the releases:
 1. get the latest version from the [GitHub repository](https://github.com/andrewkern/slim-tools/releases)
-2. Install the `.vsix` file manually with `code --install-extension slim-vscode-tools-0.0.1-beta.vsix`
+2. Install the `.vsix` file manually with `code --install-extension slim-vscode-tools-<current-version-number>-.vsix`
 
 Optionally you can install the `.vsix` file from within `vscode` by:
 1. Open `vscode`.
@@ -128,6 +138,11 @@ Initial release of `slim-tools` with the following features:
 ### 0.0.2
 - Full, auto-parsed SLiM documentation now appears in an object-oriented aware way
 - Hover / autocomplete for Classes, their properties and methods, etc. 
+
+### 0.0.3
+- Documentation Tree view now shows the full hierarchy of classes, methods, properties, etc.
+- Clicking on document item in the tree view opens the corresponding section of the slim documentation in a webview
+- Improvements in semicolon handling to be more C++ like
 
 ## Development notes
 
