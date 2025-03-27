@@ -34,6 +34,8 @@
         "extensions": [
           ".slim"
         ],
+        "firstLine": "^#!.*\\bslim\\b",
+
         "configuration": "./language-configuration.json"
       }
     ],
@@ -44,6 +46,9 @@
         "path": "./syntaxes/slim.tmLanguage.json"
       }
     ],
+    "mappedLanguages": {
+      "slim": "slim"
+    },
     "snippets": [
       {
         "language": "slim",
@@ -74,6 +79,10 @@
         {
           "id": "slimCommandsView",
           "name": "SLiM Commands"
+        },
+        {
+          "id": "docTreeView",
+          "name": "Documentation"
         }
       ]
     }
@@ -94,6 +103,7 @@
     "vscode-test": "^1.6.1"
   },
   "dependencies": {
+    "tmp": "^0.2.3",
     "vscode-languageclient": "^8.1.0",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12"

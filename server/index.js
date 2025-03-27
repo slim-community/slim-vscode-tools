@@ -311,23 +311,33 @@ async function validateTextDocument(textDocument) {
 }
 
 function shouldHaveSemicolon(line) {
-    // Don't require semicolons for these cases
-    if (line.endsWith('{') || 
-        line.endsWith('}') || 
-        line.endsWith(';') ||
-        // SLiM block declarations
-        /^(initialize|early|late|fitness)\s*\([^)]*\)\s*{?\s*$/.test(line) ||
-        // Control structures
-        /^(if|else|while|for)\s*\([^)]*\)\s*{?\s*$/.test(line) ||
-        // Empty or comment lines
-        /^\s*$/.test(line) || 
-        /^\/\//.test(line)) {
-        return false;
-    }
+    const codeOnly = line
+            .replace(/\/\/.*$/, '')           // strip inline comments
+            .replace(/\/\*.*?\*\//g, '')      // strip inline block comments
+            .trim();
 
-    // Check if the line is a complete statement
-    return true;
+        if (
+            codeOnly.endsWith('{') ||
+            codeOnly.endsWith('}') ||
+            codeOnly.endsWith(';') ||
+            // SLiM block declarations
+            /^(initialize|early|late|fitness)\s*\([^)]*\)\s*{?\s*$/.test(codeOnly) ||
+            /^\s*(s\d+\s+)?\d+\s+(early|late|reproduction|fitness)\s*\(\)\s*$/.test(codeOnly) ||
+            // C++-style function declarations
+            /^([a-zA-Z_]\w*\s+)*[a-zA-Z_]\w*\s*\([^)]*\)\s*$/.test(codeOnly) ||
+            // Control structures
+            /^\s*(if|else|while|for|switch|case|default)\b.*\)?\s*$/.test(codeOnly) ||
+            // Full-line comments or empty lines
+            /^\s*\/[\/\*]/.test(line) ||
+            /^\s*\*/.test(line) ||
+            /^\s*$/.test(line)
+        ) {
+            return false;
+        }
+
+        return true;
 }
+
 
 // ✅ Re-added document symbol provider to prevent "Unhandled method" error
 connection.onDocumentSymbol((params) => {
