@@ -35,3 +35,7 @@ Initial release of `slim-tools` with the following features:
 - Clicking on document item in the tree view opens the corresponding section of the slim documentation in a webview
 - Improvements in semicolon handling to be more C++ like
 
+
+## [0.0.4]
+
+- this is only a number bump to include a better icon on the marketplace
