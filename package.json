@@ -2,7 +2,7 @@
   "name": "slim-vscode-tools",
   "displayName": "slim-tools",
   "description": "language extension for the SLiM simulation package",
-  "version": "0.0.3",
+  "version": "0.0.3-beta",
   "icon": "slim_icon.png",
   "publisher": "andrewkern",
   "repository": {
