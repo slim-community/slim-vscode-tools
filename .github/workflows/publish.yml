@@ -3,23 +3,23 @@ name: Publish VSCode Extension
 on:
   push:
     tags:
-      - 'v*'  # triggers on version tags like v1.2.3
+      - "v*" # triggers on version tags like v1.2.3
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "16"
 
-    - run: npm ci
+      - run: npm ci
 
-    - run: npm install -g vsce
+      - run: npm install -g vsce
 
-    - run: vsce publish
-      env:
-        VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
+      - run: vsce publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}

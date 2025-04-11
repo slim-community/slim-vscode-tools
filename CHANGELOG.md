@@ -39,3 +39,7 @@ Initial release of `slim-tools` with the following features:
 ## [0.0.4]
 
 - this is only a number bump to include a better icon on the marketplace
+
+## [0.0.5]
+- Added GH action to auto-publish the extension to the marketplace
+- altered the repo location in the package.json to point to the new location in the slim-community organization
