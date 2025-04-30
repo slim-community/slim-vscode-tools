@@ -43,3 +43,6 @@ Initial release of `slim-tools` with the following features:
 ## [0.0.5]
 - Added GH action to auto-publish the extension to the marketplace
 - altered the repo location in the package.json to point to the new location in the slim-community organization
+
+## [0.0.6]
+- Added better handling of semicolons in the editor
