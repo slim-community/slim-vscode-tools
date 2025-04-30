@@ -7,12 +7,12 @@
   "publisher": "andrewkern",
   "repository": {
     "type": "git",
-    "url": "https://github.com/slim-community/slim-tools.git"
+    "url": "https://github.com/slim-community/slim-vscode-tools.git"
   },
   "bugs": {
-    "url": "https://github.com/slim-community/slim-tools/issues"
+    "url": "https://github.com/slim-community/slim-vscode-tools/issues"
   },
-  "homepage": "https://github.com/slim-community/slim-tools",
+  "homepage": "https://github.com/slim-community/slim-vscode-tools",
   "main": "index.js",
   "engines": {
     "vscode": "^1.96.0"
