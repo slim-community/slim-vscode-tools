@@ -116,7 +116,7 @@ Diagnostics are displayed as:
 
 ## Known Issues
 
-- None at the moment. Please report any issues on the [GitHub repository](https://github.com/your-repo/slim-tools/issues).
+- None at the moment. Please report any issues on the [GitHub repository](https://github.com/slim-community/slim-vscode-tools/issues).
 
 ## Release Notes
 
