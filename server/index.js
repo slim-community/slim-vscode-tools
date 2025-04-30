@@ -230,38 +230,30 @@ async function validateTextDocument(textDocument) {
     const text = textDocument.getText();
     const diagnostics = [];
     const lines = text.split('\n');
-    
-    // Track braces across the entire file
+
     let braceCount = 0;
     let lastOpenBraceLine = -1;
+    let parenBalance = 0;
 
     lines.forEach((line, lineIndex) => {
         const trimmedLine = line.trim();
-        
-        // Skip empty lines and comments
+
         if (!trimmedLine || trimmedLine.startsWith('//')) {
             return;
         }
 
-        // Handle SLiM generation-prefixed blocks
-        // Match patterns like "1000 late()" or "s1 1000 early()"
-        const isSlimBlock = /^\d+\s+\w+\(\)/.test(trimmedLine) || 
-                           /^s\d+\s+\d+\s+\w+\(\)/.test(trimmedLine);
+        const isSlimBlock = /^\d+\s+\w+\(\)/.test(trimmedLine) ||
+                            /^s\d+\s+\d+\s+\w+\(\)/.test(trimmedLine);
 
-        // Count braces in this line
         const openBracesInLine = (line.match(/{/g) || []).length;
         const closeBracesInLine = (line.match(/}/g) || []).length;
-        
-        // Update total brace count
+
         braceCount += openBracesInLine - closeBracesInLine;
-        
-        // Track where braces open
+
         if (openBracesInLine > 0) {
             lastOpenBraceLine = lineIndex;
         }
 
-        // Only flag as error if we have more closing braces than opening ones
-        // and it's not a complete SLiM block
         if (braceCount < 0 && !isSlimBlock) {
             diagnostics.push({
                 severity: DiagnosticSeverity.Error,
@@ -274,8 +266,10 @@ async function validateTextDocument(textDocument) {
             });
         }
 
-        // Check for missing semicolons, but exclude specific cases
-        if (shouldHaveSemicolon(trimmedLine)) {
+        const result = shouldHaveSemicolon(trimmedLine, parenBalance);
+        parenBalance = result.parenBalance;
+
+        if (result.shouldMark) {
             diagnostics.push({
                 severity: DiagnosticSeverity.Warning,
                 range: {
@@ -288,12 +282,10 @@ async function validateTextDocument(textDocument) {
         }
     });
 
-    // After processing all lines, check if we have unclosed braces
-    // Only report if we're not at the end of a complete block
     if (braceCount > 0) {
         const lastLine = lines[lines.length - 1].trim();
         const isCompleteBlock = lastLine === '}';
-        
+
         if (!isCompleteBlock) {
             diagnostics.push({
                 severity: DiagnosticSeverity.Error,
@@ -310,33 +302,46 @@ async function validateTextDocument(textDocument) {
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
-function shouldHaveSemicolon(line) {
-    const codeOnly = line
-            .replace(/\/\/.*$/, '')           // strip inline comments
-            .replace(/\/\*.*?\*\//g, '')      // strip inline block comments
-            .trim();
 
-        if (
-            codeOnly.endsWith('{') ||
-            codeOnly.endsWith('}') ||
-            codeOnly.endsWith(';') ||
-            // SLiM block declarations
-            /^(initialize|early|late|fitness)\s*\([^)]*\)\s*{?\s*$/.test(codeOnly) ||
-            /^\s*(s\d+\s+)?\d+\s+(early|late|reproduction|fitness)\s*\(\)\s*$/.test(codeOnly) ||
-            // C++-style function declarations
-            /^([a-zA-Z_]\w*\s+)*[a-zA-Z_]\w*\s*\([^)]*\)\s*$/.test(codeOnly) ||
-            // Control structures
-            /^\s*(if|else|while|for|switch|case|default)\b.*\)?\s*$/.test(codeOnly) ||
-            // Full-line comments or empty lines
-            /^\s*\/[\/\*]/.test(line) ||
-            /^\s*\*/.test(line) ||
-            /^\s*$/.test(line)
-        ) {
-            return false;
-        }
+function shouldHaveSemicolon(line, parenBalance = 0) {
+    const strings = [];
+    const codeWithPlaceholders = line.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, match => {
+        strings.push(match);
+        return `__STRING${strings.length - 1}__`;
+    });
 
-        return true;
+    const codeOnly = codeWithPlaceholders
+        .replace(/\/\/.*$/, '')
+        .replace(/\/\*.*?\*\//g, '')
+        .trim();
+
+    const restoredCode = strings.reduce(
+        (code, str, i) => code.replace(`__STRING${i}__`, str),
+        codeOnly
+    );
+
+    const openParens = (restoredCode.match(/\(/g) || []).length;
+    const closeParens = (restoredCode.match(/\)/g) || []).length;
+    const netParens = parenBalance + openParens - closeParens;
+
+    const isDefinitelySafe =
+        restoredCode.endsWith(';') ||
+        restoredCode.endsWith('{') ||
+        restoredCode.endsWith('}') ||
+        netParens > 0 || // still inside expression
+        /^\s*(if|else|while|for|switch|case|default)\b.*\)?\s*{?\s*$/.test(restoredCode) ||
+        /^(initialize|early|late|fitness)\s*\([^)]*\)\s*{?\s*$/.test(restoredCode) ||
+        /^\s*(s\d+\s+)?\d+\s+(early|late|reproduction|fitness)\s*\(\)\s*$/.test(restoredCode) ||
+        /^\s*\/[\/\*]/.test(line) ||
+        /^\s*\*/.test(line) ||
+        /^\s*$/.test(line);
+
+    return {
+        shouldMark: !isDefinitelySafe && netParens === 0,
+        parenBalance: netParens
+    };
 }
+
 
 
 // ✅ Re-added document symbol provider to prevent "Unhandled method" error
