@@ -6,6 +6,7 @@ import {
 } from 'vscode-languageserver';
 import { registerHoverProvider } from '../providers/hover';
 import { LanguageServerContext } from '../config/types';
+import { registerCompletionProvider } from '../providers/completion';
 
 export function registerHandlers(context: LanguageServerContext): void {
     const { connection } = context;
@@ -16,11 +17,11 @@ export function registerHandlers(context: LanguageServerContext): void {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
                 hoverProvider: true,
+                completionProvider: {
+                    resolveProvider: true,
+                    triggerCharacters: ['.'],
+                },
                 // TODO: Implement additional providers
-                // completionProvider: {
-                //     resolveProvider: true,
-                //     triggerCharacters: ['.'],
-                // },
                 // signatureHelpProvider: {
                 //     triggerCharacters: ['(', ',', ' '],
                 //     retriggerCharacters: [',', ')'],
@@ -48,4 +49,5 @@ export function registerHandlers(context: LanguageServerContext): void {
 
     // Register all providers
     registerHoverProvider(context);
+    registerCompletionProvider(context);
 }

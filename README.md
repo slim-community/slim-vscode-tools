@@ -182,6 +182,11 @@ Initial release of `slim-tools` with the following features:
 - - `hover-resolvers.ts` - attempts to resolve what hover info to show
 - Added tests for new functionality
 
+## [0.0.10]
+- Added completion service provider for code completion suggestions
+- - Provider is stored in `completion.ts`
+- - CompletionService (`completion-service.ts`) does the heavy lifting for suggesting completion options
+
 ## Development notes
 
 1. First install the dependencies with `npm install`

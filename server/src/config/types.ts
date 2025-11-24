@@ -1,5 +1,6 @@
 import { Connection, TextDocument, TextDocuments } from 'vscode-languageserver';
 import { DocumentationService } from '../services/documentation-service';
+import { CompletionService } from '../services/completion-service';
 
 // CORE DATA STRUCTURES
 
@@ -141,4 +142,5 @@ export interface LanguageServerContext {
     connection: Connection;
     documents: TextDocuments<TextDocument>;
     documentationService: DocumentationService;
+    completionService: CompletionService;
 }

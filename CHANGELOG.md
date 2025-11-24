@@ -47,21 +47,21 @@ Initial release of `slim-tools` with the following features:
 ## [0.0.6]
 - Added better handling of semicolons in the editor
 
-## [0.0.7]
+## [0.0.7] (CAT)
 - Updated documentation to SLiM v5.1
 - Improved language configuration (indentation rules, folding, etc.)
 - Updated link in README
 - Added test simulations
 - Remove unused files
 
-## [0.0.8]
+## [0.0.8] (CAT)
 - Refactor the language server and extension from JavaScript to TypeScript
 - Boilerplate for Vitest testing system
 - Small updates to syntax (slim.tmLanguage.json)
 - ESLint/Prettier installed for the project
 - Update .gitignore
 
-## [0.0.9]
+## [0.0.9] (CAT)
 - Added `logger.ts` with improved logging features
 - Update language server `index.ts` to use external services and handlers
 - Added `diagnostics.ts` for managing diagnostics information
@@ -74,3 +74,8 @@ Initial release of `slim-tools` with the following features:
 - - `markdown.ts` - manages the creation of markdown hover info
 - - `hover-resolvers.ts` - attempts to resolve what hover info to show
 - Added tests for new functionality
+
+## [0.0.10] (CAT)
+- Added completion service provider for code completion suggestions
+- - Provider is stored in `completion.ts`
+- - CompletionService (`completion-service.ts`) does the heavy lifting for suggesting completion options

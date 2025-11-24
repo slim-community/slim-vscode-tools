@@ -3,6 +3,7 @@ import type { Hover } from 'vscode-languageserver';
 import { registerHoverProvider } from '../../src/providers/hover';
 import type { LanguageServerContext } from '../../src/config/types';
 import type { DocumentationService } from '../../src/services/documentation-service';
+import type { CompletionService } from '../../src/services/completion-service';
 
 class MockDocumentationService implements Partial<DocumentationService> {
   getFunctions() { return {}; }
@@ -18,6 +19,11 @@ class MockDocumentationService implements Partial<DocumentationService> {
       },
     } as any;
   }
+}
+
+class MockCompletionService implements Partial<CompletionService> {
+  getCompletions() { return []; }
+  resolveCompletion() { return {} as any; }
 }
 
 function createHoverTestContext(source: string): { getHover: () => (params: any) => Hover | null | Promise<Hover | null> } {
@@ -37,11 +43,13 @@ function createHoverTestContext(source: string): { getHover: () => (params: any)
   } as any;
 
   const documentationService = new MockDocumentationService() as DocumentationService;
+  const completionService = new MockCompletionService() as unknown as CompletionService;
 
   const ctx: LanguageServerContext = {
     connection,
     documents,
     documentationService,
+    completionService,
   };
 
   registerHoverProvider(ctx);
