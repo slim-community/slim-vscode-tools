@@ -1,0 +1,173 @@
+// Based on demo-genetic evolutionary rescue model by Julian Beaman & Corey Bradshaw
+// Original: https://github.com/cjabradshaw/demo-genetic/blob/main/scripts/rescue-scenario-4_model.txt
+// Modified by Chris Talbot to update to SLiM v5 and enable RL training
+
+initialize() {
+    initializeSLiMModelType("nonWF");
+
+    // --- Constants ---
+    defineConstant("Kp1", 2000);
+    defineConstant("Kp2", 500);
+    defineConstant("N", 2);
+
+    // Survival table
+    defineConstant("L",c(1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0));
+
+    defineConstant("Tdelta", 10001); // Crash time
+
+    // Mutation/Genomic setup
+    initializeMutationRate(1e-6);
+    initializeMutationType("m1", 0.5, "f", 0.0);
+    initializeMutationType("m2", 0.1, "g", -0.03, 0.2); // Deleterious
+    initializeGenomicElementType("g1", c(m1,m2), c(1,1));
+    initializeGenomicElement(g1, 0, 99999);
+    initializeRecombinationRate(1e-7);
+}
+
+reproduction() {
+    if(individual.age > 3) {
+        mate = subpop.sampleIndividuals(1, minAge = 4);
+        subpop.addCrossed(individual, mate);
+    }
+}
+
+1 early() {
+    defineConstant("simID", getSeed());
+
+    // Logging setup (optional for RL, but good for debugging)
+    defineConstant("LOG_extinct", community.createLogFile("rl_training_extinction.csv"));
+    LOG_extinct.addCycle();
+
+    // Creates a population size logfile
+    defineConstant("LOG_popsize",
+    community.createLogFile("rl_training_popsize.csv"));
+    LOG_popsize.addCycle();
+    LOG_popsize.addCustomColumn("pop size 1","p1.individualCount;");
+    LOG_popsize.addCustomColumn("pop size 2","p2.individualCount;");
+
+    for(i in 1:N) sim.addSubpop(i, 2000);
+    sim.subpopulations.individuals.age = rdunif(4000, min = 0, max = 12);
+}
+
+early() {
+    // --- Demography / Survival Logic ---
+
+    // P1 Survival
+    inds_p1 = p1.individuals;
+    if (length(inds_p1) > 0) {
+        survival_p1 = L[inds_p1.age] * c(rbeta(length(inds_p1), 0.0000000005*p1.individualCount^3+1, 0.0000000003*p1.individualCount^3+0.6));
+        inds_p1.fitnessScaling = survival_p1;
+        p1.fitnessScaling = min(Kp1 / (p1.individualCount * mean(survival_p1)), 1.28);
+    }
+
+    // P2 Survival
+    inds_p2 = p2.individuals;
+    if (length(inds_p2) > 0) {
+        survival_p2 = L[inds_p2.age] * c(rbeta(length(inds_p2), 0.0000000005*p2.individualCount^3+1, 0.0000000003*p2.individualCount^3+0.6));
+        inds_p2.fitnessScaling = survival_p2;
+
+        if(sim.cycle < Tdelta){
+            p2.fitnessScaling = min(Kp1 / (p2.individualCount * mean(survival_p2)), 1.28);
+        } else {
+            p2.fitnessScaling = min(Kp2 / (p2.individualCount * mean(survival_p2)), 1.28);
+        }
+    }
+}
+
+9999 late() {
+    // Save state for resetting
+    sim.outputFull(tempdir() + "slim_rl_base.txt");
+}
+
+// -------------------------------------------------------------
+// RL AGENT INTERACTION LOOP (Management Window)
+// -------------------------------------------------------------
+10250:10265 early() {
+    // 1. GATHER STATE
+    // Calculate Fixed Deleterious Mutations
+    fixed_m2 = 0;
+    if (p2.individualCount > 0) {
+        fixed_m2 = sum(p2.haplosomes.mutationCountsInHaplosomes(mutations=sim.mutationsOfType(m2)) == p2.individualCount * 2);
+    }
+
+    // Calculate Mean Heterozygosity (proxy for genetic health)
+    // Note: This is computationally expensive, remove if training is too slow
+    het = 0.0;
+    if (p2.individualCount > 0)
+        het = calcHeterozygosity(p2.haplosomes);
+
+    // 2. SEND STATE TO AGENT (Python)
+    // Format: STATE::Cycle::PopSizeP2::PopSizeP1::FixedLoad::Heterozygosity
+    catn("STATE::" + sim.cycle + "::" + p2.individualCount + "::" + p1.individualCount + "::" + fixed_m2 + "::" + het);
+
+    // 3. WAIT FOR ACTION (Blocking Input)
+    // The simulation effectively pauses here until Python writes to stdin
+    action_string = readLine();
+
+    // 4. PROCESS ACTION
+    // We expect an integer string (e.g., "0", "10", "50")
+    num_migrants = asInteger(action_string);
+
+    tajimas_d = calcDxy(p2.haplosomes);
+
+    if (num_migrants > 0) {
+        // Ensure we don't try to take more than exist in P1
+        available = p1.individualCount;
+        if (num_migrants > available) {
+            num_migrants = available;
+        }
+
+        if (num_migrants > 0) {
+            migrants = sample(p1.individuals, num_migrants);
+            p2.takeMigrants(migrants);
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// MONITORING & RESET
+// -------------------------------------------------------------
+10001:25000 late() {
+
+    // Check for Extinction OR Max Steps (Success)
+    // Let's say 12000 is the arbitrary "Win" condition for the episode
+    is_extinct = (p2.individualCount == 0);
+    is_success = (sim.cycle >= 12000);
+
+    if (is_extinct | is_success) {
+
+        // 1. Report Outcome
+        if (is_extinct) {
+            catn("GAMEOVER::EXTINCTION::" + sim.cycle);
+            LOG_extinct.logRow();
+        } else {
+            catn("GAMEOVER::SUCCESS::" + sim.cycle);
+        }
+
+        // 2. WAIT for instruction from Python
+        // This prevents SLiM from running away in an infinite loop
+        instruction = readLine();
+
+        if (instruction == "RESET") {
+            // Go back to the saved state
+            sim.readFromPopulationFile(tempdir() + "slim_rl_base.txt");
+
+            // VITAL: Set a new random seed so the next run is different
+            setSeed(rdunif(1, 0, asInteger(2^62) - 1));
+        } else if (instruction == "STOP") {
+            // End the SLiM process cleanly
+            sim.simulationFinished();
+        }
+    }
+    // If the episode continues...
+    else {
+        // Calculate metrics for the step
+        fixed_m2 = sum(p2.haplosomes.mutationCountsInHaplosomes(mutations=sim.mutationsOfType(m2)) == p2.individualCount * 2);
+
+        // Only log/print periodically if desired, or every step for RL
+        if (sim.cycle % 100 == 0) {
+            catn("Cycle: " + sim.cycle + " | Pop Size: " + p2.individualCount);
+        }
+        LOG_popsize.logRow();
+    }
+}

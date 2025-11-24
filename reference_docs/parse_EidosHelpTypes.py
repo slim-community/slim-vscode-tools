@@ -37,10 +37,10 @@ def parse_type_docs(html_path):
 
 
 def main():
-    html_path = "/Users/adk/github/slim-tools/reference_docs/EidosHelpTypes.html"
+    html_path = "EidosHelpTypes.html"
     parsed_data = parse_type_docs(html_path)
 
-    json_output_path = "/Users/adk/github/slim-tools/reference_docs/eidos_types.json"
+    json_output_path = "../docs/eidos_types.json"
     with open(json_output_path, "w", encoding="utf-8") as json_file:
         json.dump(parsed_data, json_file, indent=4)
 

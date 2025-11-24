@@ -85,7 +85,7 @@ You can build from source:
 4. Install the resulting package with `code --install-extension slim-vscode-tools-<current-version-number>-.vsix` (this assumes you've installed the `vscode` command line tool)
 
 You can use the prepackaged package from the releases:
-1. get the latest version from the [GitHub repository](https://github.com/andrewkern/slim-tools/releases)
+1. get the latest version from the [GitHub repository](https://github.com/slim-community/slim-tools/releases)
 2. Install the `.vsix` file manually with `code --install-extension slim-vscode-tools-<current-version-number>-.vsix`
 
 Optionally you can install the `.vsix` file from within `vscode` by:
@@ -153,6 +153,13 @@ Initial release of `slim-tools` with the following features:
 
 ## [0.0.6]
 - Added better handling of semicolons in the editor
+
+## [0.0.7]
+- Updated documentation to SLiM v5.1
+- Improved language configuration (indentation rules, folding, etc.)
+- Updated link in README
+- Added test simulations (and moved the existing one) into `/test-sims`
+- Remove unused files
 
 ## Development notes
 

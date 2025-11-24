@@ -150,6 +150,12 @@
             ],
             "description": "Returns the set-theoretic union of x and y, denoted x \u222a y: a vector containing all elements that are in x and/or y.\u00a0 Duplicate elements will be stripped out, in the same manner as the unique() function.\u00a0 This function is therefore roughly equivalent to unique(c(x, y)), but this function will probably be faster.\u00a0 The order of elements in the returned vector is arbitrary and should not be relied upon.\u00a0 The returned vector will be of the same type as x and y, and x and y must be of the same type."
         },
+        "sign": {
+            "signatures": [
+                "(numeric)sign(numeric\u00a0x)"
+            ],
+            "description": "Returns the sign of x, meaning that for each element of x, a value of either -1, 0, or 1 will be returned as the corresponding element in the returned vector depending upon whether the original element was (respectively) negative, zero, or positive.\u00a0 If x is integer, an integer vector is returned; if x is float, a float vector is returned."
+        },
         "sin": {
             "signatures": [
                 "(float)sin(numeric\u00a0x)"
@@ -190,15 +196,21 @@
     "Statistics functions": {
         "cor": {
             "signatures": [
-                "(float$)cor(numeric\u00a0x, numeric\u00a0y)"
+                "(float)cor(numeric\u00a0x, [Nif\u00a0y\u00a0=\u00a0NULL])"
             ],
-            "description": "Returns the sample Pearson\u2019s correlation coefficient between x and y, usually denoted r.\u00a0 The sizes of x and y must be identical.\u00a0 If x and y have a size of 0 or 1, the return value will be NULL.\u00a0 At present it is illegal to call cor() with a matrix or array argument, because the desired behavior in that case has not yet been implemented."
+            "description": "Returns the sample Pearson\u2019s correlation coefficient between vectors x and y, usually denoted r.\u00a0 If y is NULL, it is considered to have the same value as x; for vector x this is not very useful (since the correlation of x with itself is 1.0 by definition), but it is more useful for calculating a correlation matrix using the columns of x (see below).\u00a0 The sizes of x and y must be identical.\u00a0 If x and y have a size of 0 or 1, NAN will be returned (a change in behavior from Eidos 4.0; it used to return NULL).\u00a0 The return value will be a singleton float. It is also legal to call cor() with matrix x and/or y.\u00a0 In this case the return value will be a correlation matrix between x and y.\u00a0 Each column of x will be represented by one row of the result (or if x is a vector, the result will simply have one row representing x), and each column of y will be represented by one column of the result (or if y is a vector, the result will simply have one column representing y).\u00a0 Each element in the result matrix will therefore represent the correlation between a column of matrix x (or the entirety of vector x) and a column of matrix y (or the entirety of vector y).\u00a0 Calling cor(x, x), or equivalently cor(x), thus produces a symmetric correlation matrix among the columns of x."
         },
         "cov": {
             "signatures": [
-                "(float$)cov(numeric\u00a0x, numeric\u00a0y)"
+                "(float)cov(numeric\u00a0x, [Nif\u00a0y\u00a0=\u00a0NULL])"
             ],
-            "description": "Returns the corrected sample covariance between x and y.\u00a0 The sizes of x and y must be identical.\u00a0 If x and y have a size of 0 or 1, the return value will be NULL.\u00a0 At present it is illegal to call cov() with a matrix or array argument, because the desired behavior in that case has not yet been implemented."
+            "description": "Returns the corrected sample covariance between vectors x and y.\u00a0 If y is NULL, it is considered to have the same value as x; for vector x this is equivalent to calling var(x), but it is more useful for calculating a variance-covariance matrix using the columns of x (see below).\u00a0 The sizes of x and y must be identical.\u00a0 If x and y have a size of 0 or 1, NAN will be returned (a change in behavior from Eidos 4.0; it used to return NULL).\u00a0 The return value will be a singleton float. It is also legal to call cov() with matrix x and/or y.\u00a0 In this case the return value will be a covariance matrix between x and y.\u00a0 Each column of x will be represented by one row of the result (or if x is a vector, the result will simply have one row representing x), and each column of y will be represented by one column of the result (or if y is a vector, the result will simply have one column representing y).\u00a0 Each element in the result matrix will therefore represent the covariance between a column of matrix x (or the entirety of vector x) and a column of matrix y (or the entirety of vector y).\u00a0 Calling cov(x, x), or equivalently cov(x), thus produces a symmetric variance-covariance matrix among the columns of x."
+        },
+        "filter": {
+            "signatures": [
+                "(float)filter(numeric\u00a0x, float\u00a0filter, [lif$\u00a0outside\u00a0=\u00a0F])"
+            ],
+            "description": "Returns the result of convolving x with filter.\u00a0 The returned vector will be the same length as x.\u00a0 The convolution is performed by centering filter on each position of x to produce a corresponding result element that is the sum over the products of each filter value with each x value within the filter\u2019s range.\u00a0 The length of filter is required to be odd, so that the filter has a central value (and can thus be centered over each value of x). If the filter, centered over a given value of x, extends beyond the end of x then the calculation of the corresponding element of the result is governed by the outside parameter.\u00a0 When outside is F (the default), the corresponding element in the result will be NAN; this matches the behavior of the R filter() function (except that R uses NA).\u00a0 If outside is T, values outside x will be excluded from the calculation (the filter value covering that position will be considered to be 0), and the other values in the filter will be adjusted so that the sum of the absolute values of the filter weights used is unchanged, to compensate for the excluded values by giving the positions inside x more weight. Finally, if outside is integer or float, that value will be used as the value of x for all positions outside x; one might pass an expected value or mean value in this way, to be used for all outside positions. This function is useful for computing running means and similar transformations of an input vector.\u00a0 For a simple running mean of width w, pass rep(1/w, w) for filter.\u00a0 That case is automatically detected and handled efficiently; otherwise, the runtime of this function is proportional to the length of x times the length of filter, and so will be slow for long filters."
         },
         "max": {
             "signatures": [
@@ -252,7 +264,7 @@
             "signatures": [
                 "(float$)sd(numeric\u00a0x)"
             ],
-            "description": "Returns the corrected sample standard deviation of x.\u00a0 If x has a size of 0 or 1, the return value will be NULL."
+            "description": "Returns the corrected sample standard deviation of x.\u00a0 If x has a size of 0 or 1, NAN will be returned (a change in behavior from Eidos 4.0; it used to return NULL).\u00a0 Matrix/array dimensions are ignored by sd(); it simply uses all of the elements of x for its calculation."
         },
         "ttest": {
             "signatures": [
@@ -264,7 +276,7 @@
             "signatures": [
                 "(float$)var(numeric\u00a0x)"
             ],
-            "description": "Returns the corrected sample variance of x.\u00a0 If x has a size of 0 or 1, the return value will be NULL.\u00a0 This is the square of the standard deviation calculated by sd().\u00a0 At present it is illegal to call var() with a matrix or array argument, because the desired behavior in that case has not yet been implemented."
+            "description": "Returns the corrected sample variance of x.\u00a0 If x has a size of 0 or 1, NAN will be returned (a change in behavior from Eidos 4.0; it used to return NULL).\u00a0 This is the square of the standard deviation calculated by sd().\u00a0 It is illegal to call var() with a matrix or array argument; use cov() to calculate a variance-covariance matrix."
         }
     },
     "Distribution drawing and density functions": {
@@ -405,6 +417,12 @@
                 "(float)rweibull(integer$\u00a0n, numeric\u00a0lambda, numeric\u00a0k)"
             ],
             "description": "Returns a vector of n random draws from a Weibull distribution with scale parameter lambda and shape parameter k, both greater than zero.\u00a0 The lambda and k parameters may either be singletons, specifying a single value to be used for all of the draws, or they may be vectors of length n, specifying a value for each draw.\u00a0 Draws are made from a Weibull distribution with probability distribution P(s\u00a0|\u00a0\u03bb,k)\u00a0=\u00a0(k / \u03bbk)\u00a0sk\u22121\u00a0exp(-(s/\u03bb)k)."
+        },
+        "rztpois": {
+            "signatures": [
+                "(integer)rztpois(integer$\u00a0n, numeric\u00a0lambda)"
+            ],
+            "description": "Returns a vector of n random draws from a zero-truncated Poisson distribution with parameter lambda (not to be confused with the language concept of a \u201clambda\u201d; lambda here is just the name of a parameter, because the symbol typically used for the parameter of a Poisson distribution is the Greek letter \u03bb).\u00a0 The zero-truncated Poisson distribution is the conditional probability distribution of a Poisson-distributed random variable, given that the value of the random variable is not zero.\u00a0 The values returned by rztpois() will therefore never be zero. The lambda parameter, \u03bb, may either be a singleton, specifying a single value to be used for all of the draws, or it may be a vector of length n, specifying a value for each draw.\u00a0 It is important to note that for rpois() the expected mean of the distribution is \u03bb, but for rztpois() the expected mean of the distribution is \u03bb\u00a0/\u00a0(1\u00a0\u2212\u00a0exp(\u2212\u03bb)), precisely because the zero-truncated Poisson distribution is conditional upon being non-zero."
         }
     },
     "Vector construction functions": {
@@ -750,7 +768,7 @@
             "signatures": [
                 "(*)apply(*\u00a0x, integer\u00a0margin, string$\u00a0lambdaSource)"
             ],
-            "description": "Applies a block of Eidos code to margins of x.\u00a0 This function is essentially an extension of sapply() for use with matrices and arrays; it is recommended that you fully understand sapply() before tackling this function.\u00a0 As with sapply(), the lambda specified by lambdaSource will be executed for subsets of x, and the results will be concatenated together with type-promotion in the style of c() to produce a result.\u00a0 Unlike sapply(), however, the subsets of x used might be rows, columns, or higher-dimensional slices of x, rather than just single elements, depending upon the value of margin.\u00a0 For apply(), x must be a matrix or array.\u00a0 The apply() function in Eidos is patterned directly after the apply() function in R, and should behave identically, except that dimension indices in Eidos are zero-based whereas in R they are one-based. The margin parameter gives the indices of dimensions of x that will be iterated over when assembling values to supply to lambdaSource.\u00a0 If x is a matrix it has two dimensions: rows, of dimension index 0, and columns, of dimension index 1.\u00a0 These are the indices of the dimension sizes returned by dim(); dim(x)[0] gives the number of rows of x, and dim(x)[1] gives the number of columns.\u00a0 These dimension indices are also apparent when subsetting x; a subset index in position 0, such as x[m,], gives row m of x, whereas a subset index in position 1, such as x[,n], gives column n of x.\u00a0 In the same manner, supplying 0 for margin specifies that subsets of x from x[0,] to x[m,] should be \u201cpassed\u201d to lambdaSource, through the applyValue \u201cparameter\u201d; dimension 0 is iterated over, whereas dimension 1 is taken in aggregate since it is not included in margin.\u00a0 The final effect of this is that whole rows of x are passed to lambdaSource through applyValue.\u00a0 Similarly, margin=1 would specify that subsets of x from x[,0] to x[,n] should be passed to lambdaSource, resulting in whole columns being passed.\u00a0 Specifying margin=c(0,1) would indicate that dimensions 0 and 1 should both be iterated over (dimension 0 more rapidly), so for a matrix each each individual value of x would be passed to lambdaSource.\u00a0 Specifying margin=c(1,0) would similarly iterate over both dimensions, but dimension 1 more rapidly; the traversal order would therefore be different, and the dimensionality of the result would also differ (see below).\u00a0 For higher-dimensional arrays dimension indices beyond 1 exist, and so margin=c(0,1) or margin=c(1,0) would provide slices of x to lambdaSource, each slice having a specific row and column index.\u00a0 Slices are generated by subsetting in the same way as operator [], but additionally, redundant dimensions are dropped as by drop(). The return value from apply() is built up from the type-promoted concatenated results, as if by the c() function, from the iterated execution of lambdaSource; the only question is what dimensional structure is imposed upon that vector of values.\u00a0 If the results from lambdaSource are not of a consistent length, or are of length zero, then the concatenated results are returned as a plain vector.\u00a0 If all results are of length n > 1, the return value is an array of dimensions c(n, dim(x)[margin]); in other words, each n-vector provides the lowest dimension of the result, and the sizes of the marginal dimensions are imposed upon the data above that.\u00a0 If all results are of length n == 1, then if a single margin was specified the result is a vector (of length equal to the size of that marginal dimension), or if more than one margin was specified the result is an array of dimension dim(x)[margin]; in other words, the sizes of the marginal dimensions are imposed upon the data.\u00a0 Since apply() iterates over the marginal dimensions in the same manner, these structures follows the structure of the data. The above explanation may not be entirely clear, so let\u2019s look at an example.\u00a0 If x is a matrix with two rows and three columns, such as defined by x = matrix(1:6, nrow=2);, then executing apply(x,\u00a00,\u00a0\"sum(applyValue);\"); would cause each row of x to be supplied to the lambda through applyValue, and the values in each row would thus be summed to produce 9 12 as a result.\u00a0 The call apply(x,\u00a01,\u00a0\"sum(applyValue);\"); would instead sum columns of x, producing 3 7 11 as a result.\u00a0 Now consider using range() rather than sum() in the lambda, thus producing two values for each row or column.\u00a0 The call apply(x,\u00a00,\u00a0\"range(applyValue);\"); produces a result of matrix(c(1,5,2,6), nrow=2), with the range of the first row of x, 1\u20135, in the first column of the result, and the range of the second row of x, 2\u20136, in the second column.\u00a0 Although visualization becomes more difficult, these same patterns extend to higher dimensions and arbitrary margins of x."
+            "description": "Applies a block of Eidos code to margins of x.\u00a0 This function is essentially an extension of sapply() for use with matrices and arrays; it is recommended that you fully understand sapply() before tackling this function.\u00a0 As with sapply(), the lambda specified by lambdaSource will be executed for subsets of x, and the results will be concatenated together with type-promotion in the style of c() to produce a result.\u00a0 Unlike sapply(), however, the subsets of x used might be rows, columns, or higher-dimensional slices of x, rather than just single elements, depending upon the value of margin.\u00a0 For apply(), x must be a matrix or array.\u00a0 The apply() function in Eidos is patterned directly after the apply() function in R, and should behave identically, except that dimension indices in Eidos are zero-based whereas in R they are one-based. The margin parameter gives the indices of dimensions of x that will be iterated over when assembling values to supply to lambdaSource.\u00a0 If x is a matrix it has two dimensions: rows, of dimension index 0, and columns, of dimension index 1.\u00a0 These are the indices of the dimension sizes returned by dim(); dim(x)[0] gives the number of rows of x, and dim(x)[1] gives the number of columns.\u00a0 These dimension indices are also apparent when subsetting x; a subset index in position 0, such as x[m,], gives row m of x, whereas a subset index in position 1, such as x[,n], gives column n of x.\u00a0 In the same manner, supplying 0 for margin specifies that subsets of x from x[0,] to x[m,] should be \u201cpassed\u201d to lambdaSource, through the applyValue \u201cparameter\u201d; dimension 0 is iterated over, whereas dimension 1 is taken in aggregate since it is not included in margin.\u00a0 The final effect of this is that whole rows of x are passed to lambdaSource through applyValue.\u00a0 Similarly, margin=1 would specify that subsets of x from x[,0] to x[,n] should be passed to lambdaSource, resulting in whole columns being passed.\u00a0 Specifying margin=c(0,1) would indicate that dimensions 0 and 1 should both be iterated over (dimension 0 more rapidly), so for a matrix each each individual value of x would be passed to lambdaSource.\u00a0 Specifying margin=c(1,0) would similarly iterate over both dimensions, but dimension 1 more rapidly; the traversal order would therefore be different, and the dimensionality of the result would also differ (see below).\u00a0 For higher-dimensional arrays dimension indices beyond 1 exist, and so margin=c(0,1) or margin=c(1,0) would provide slices of x to lambdaSource, each slice having a specific row and column index.\u00a0 Slices are generated by subsetting in the same way as operator [], but additionally, redundant dimensions are dropped as by drop(). The return value from apply() is built up from the type-promoted concatenated results, as if by the c() function, from the iterated execution of lambdaSource; the only question is what dimensional structure is imposed upon that vector of values.\u00a0 If the results from lambdaSource are not of a consistent length, or are of length zero, then the concatenated results are returned as a plain vector.\u00a0 If all results are of length n > 1, the return value is an array of dimensions c(n, dim(x)[margin]); in other words, each n-vector provides the lowest dimension of the result, and the sizes of the marginal dimensions are imposed upon the data above that.\u00a0 If all results are of length n == 1, then if a single margin was specified the result is a vector (of length equal to the size of that marginal dimension), or if more than one margin was specified the result is an array of dimension dim(x)[margin]; in other words, the sizes of the marginal dimensions are imposed upon the data.\u00a0 Since apply() iterates over the marginal dimensions in the same manner, these structures follows the structure of the data. The above explanation may not be entirely clear, so let\u2019s look at an example.\u00a0 If x is a matrix with two rows and three columns, such as defined by x = matrix(1:6, nrow=2);, then executing apply(x,\u00a00,\u00a0\"sum(applyValue);\"); would cause each row of x to be supplied to the lambda through applyValue, and the values in each row would thus be summed to produce 9 12 as a result.\u00a0 The call apply(x,\u00a01,\u00a0\"sum(applyValue);\"); would instead sum columns of x, producing 3 7 11 as a result.\u00a0 Now consider using range() rather than sum() in the lambda, thus producing two values for each row or column.\u00a0 The call apply(x,\u00a00,\u00a0\"range(applyValue);\"); produces a result of matrix(c(1,5,2,6), nrow=2), with the range of the first row of x, 1\u20135, in the first column of the result, and the range of the second row of x, 2\u20136, in the second column.\u00a0 Although visualization becomes more difficult, these same patterns extend to higher dimensions and arbitrary margins of x. For efficiently obtaining the sums of the rows or columns of a matrix, see rowSums() and colSums()."
         },
         "array": {
             "signatures": [
@@ -758,11 +776,29 @@
             ],
             "description": "Creates a new array from the data specified by data, with the dimension sizes specified by dim.\u00a0 The first dimension size in dim is the number of rows, and the second is the number of columns; further entries specify the sizes of higher-order dimensions.\u00a0 As many dimensions may be specified as desired, but with a minimum of two dimensions.\u00a0 An array with two dimensions is a matrix (by definition); note that matrix() may provide a more convenient way to make a new matrix.\u00a0 Each dimension must be of size 1 or greater; 0-size dimensions are not allowed. The elements of data are used to populate the new array; the size of data must therefore be equal to the size of the new array, which is the product of all the values in dim.\u00a0 The new array will be filled in dimension order: one element in each row until a column is filled, then on to the next column in the same manner until all columns are filled, and then onward into the higher-order dimensions in the same manner."
         },
+        "asVector": {
+            "signatures": [
+                "(*)asVector(*\u00a0x)"
+            ],
+            "description": "Creates a new vector from the elements of x, stripping off any dimensional information associated with x being a vector or array.\u00a0 The values of the resulting vector are read out from x in dimension order: one element from each row until a column is completed, then on to the next column in the same manner until all columns are completed, and then onward into the higher-order dimensions in the same manner.\u00a0 If x is already a vector, it is returned unmodified.\u00a0 See drop() for a similar method that drops only matrix/array dimensions that are redundant."
+        },
         "cbind": {
             "signatures": [
                 "(*)cbind(...)"
             ],
             "description": "Combines vectors or matrices by column to produce a single matrix.\u00a0 The parameters must be vectors (which are interpreted by cbind() as if they were one-column matrices) or matrices.\u00a0 They must be of the same type, of the same class if they are of type object, and have the same number of rows.\u00a0 If these conditions are met, the result is a single matrix with the parameters joined together, left to right.\u00a0 Parameters may instead be NULL, in which case they are ignored; or if all parameters are NULL, the result is NULL.\u00a0 A sequence of vectors, matrices, and NULLs may thus be concatenated with the NULL values removed, analogous to c().\u00a0 Calling cbind(x) is an easy way to create a one-column matrix from a vector. To combine vectors or matrices by row instead, see rbind()."
+        },
+        "colSums": {
+            "signatures": [
+                "(numeric)colSums(lif\u00a0x)"
+            ],
+            "description": "Returns the sums of the columns of x, which must be a matrix.\u00a0 The result is a vector of elements, each providing the sum of the corresponding column of x.\u00a0 If x is of type logical or integer the result will be of type integer; unlike the sum() function, colSums() does not promote the return type to float if integer overflow occurs, but instead throws an error.\u00a0 If x is of type float the result will be of type float.\u00a0 Except for the change in the treatment of integer overflow noted above, this is equivalent to using apply() with sum() to sum the columns of x, but is much faster."
+        },
+        "det": {
+            "signatures": [
+                "(numeric$)det(numeric\u00a0x)"
+            ],
+            "description": "Returns the determinant of x, which must be a square matrix (otherwise an error is raised).\u00a0 The determinant is a scalar-valued function of the entries of the matrix, and characterizes some properties of the matrix.\u00a0 In particular, the determinant is nonzero if and only if the matrix is invertible.\u00a0 If the determinant is zero, the matrix does not have an inverse and is referred to as \u201csingular\u201d.\u00a0 In Eidos the determinant is calculated from the LU decomposition of the matrix.\u00a0 The return type will match the type of x."
         },
         "diag": {
             "signatures": [
@@ -780,7 +816,13 @@
             "signatures": [
                 "(*)drop(*\u00a0x)"
             ],
-            "description": "Returns the result of dropping redundant dimensions from matrix or array x.\u00a0 Redundant dimensions are those with a size of exactly 1.\u00a0 Non-redundant dimensions are retained.\u00a0 If only one non-redundant dimension is present, the result is a vector; if more than one non-redundant dimension is present, the result will be a matrix or array.\u00a0 If x is not a matrix or array, it is returned unmodified."
+            "description": "Returns the result of dropping redundant dimensions from matrix or array x.\u00a0 Redundant dimensions are those with a size of exactly 1.\u00a0 Non-redundant dimensions are retained.\u00a0 If only one non-redundant dimension is present, the result is a vector; if more than one non-redundant dimension is present, the result will be a matrix or array.\u00a0 If x is not a matrix or array, it is returned unmodified.\u00a0 See asVector() for a way to drop all dimensions of a matrix or array, whether redundant or not."
+        },
+        "inverse": {
+            "signatures": [
+                "(float)inverse(numeric\u00a0x)"
+            ],
+            "description": "Returns the (multiplicative) inverse of x, which must be a square non-singular matrix (otherwise an error is raised).\u00a0 If matrix B is the inverse of n-by-n matrix A, then AB = BA = In, where In denotes the n-by-n identity matrix and the multiplication used is ordinary matrix multiplication as performed by matrixMult().\u00a0 If x might be singular (and thus non-invertible), and you wish to avoid the possibility of an error, you can call det() first to find the determinant of the matrix; if the determinant is zero, the matrix is singular and does not have an inverse, and so inverse() should not be called.\u00a0 In Eidos the inverse is calculated from the LU decomposition of the matrix."
         },
         "lowerTri": {
             "signatures": [
@@ -800,6 +842,12 @@
             ],
             "description": "Returns the result of matrix multiplication of x with y.\u00a0 In Eidos (as in R), with two matrices A and B the simple product A\u00a0*\u00a0B multiplies the corresponding elements of the matrices; in other words, if X is the result of A\u00a0*\u00a0B, then Xij\u00a0=\u00a0Aij\u00a0* Bij.\u00a0 This is parallel to the definition of other operators; A\u00a0+\u00a0B adds the corresponding elements of the matrices (Xij\u00a0=\u00a0Aij\u00a0+\u00a0Bij), etc.\u00a0 In R, true matrix multiplication is achieved with a special operator, %*%; in Eidos, the matrixMult() function is used instead. Both x and y must be matrices, and must be conformable according to the standard definition of matrix multiplication (i.e., if x is an n\u00a0\u00d7\u00a0m matrix then y must be a m\u00a0\u00d7\u00a0p matrix, and the result will be a n\u00a0\u00d7\u00a0p matrix).\u00a0 Vectors will not be promoted to matrices by this function, even if such promotion would lead to a conformable matrix."
         },
+        "matrixPow": {
+            "signatures": [
+                "(numeric)matrixPow(numeric\u00a0x, integer$\u00a0power)"
+            ],
+            "description": "Returns the result of raising matrix x to an integer power.\u00a0 The parameter x must be a square matrix (or an error will be raised).\u00a0 This operation is performed by repeated matrix multiplication with matrixMult(), and uses inverse() to compute the inverse of the matrix if power is negative."
+        },
         "nrow": {
             "signatures": [
                 "(integer$)nrow(*\u00a0x)"
@@ -812,17 +860,35 @@
             ],
             "description": "Returns the number of columns in matrix or array x.\u00a0 For vector x, ncol() returns NULL; size() should be used.\u00a0 An equivalent of R\u2019s NCOL() function, which treats vectors as 1-column matrices, is not provided but would be trivial to implement as a user-defined function."
         },
+        "outerProduct": {
+            "signatures": [
+                "(numeric)outerProduct(numeric\u00a0x, numeric\u00a0y)"
+            ],
+            "description": "Returns the outer product of vectors x and y.\u00a0 The outer product, x \u2297 y, is the result of matrix multiplication of x with the transpose of y, or xyT.\u00a0 It will be a matrix with a number of rows equal to the length of x, and a number of columns equal to the length of y.\u00a0 It is required that x and y be vectors, not matrices or arrays, that they have non-zero lengths, and that they be the same type \u2013 both integer or both float.\u00a0 The return value will be of the same type as x and y."
+        },
         "rbind": {
             "signatures": [
                 "(*)rbind(...)"
             ],
             "description": "Combines vectors or matrices by row to produce a single matrix.\u00a0 The parameters must be vectors (which are interpreted by rbind() as if they were one-row matrices) or matrices.\u00a0 They must be of the same type, of the same class if they are of type object, and have the same number of columns.\u00a0 If these conditions are met, the result is a single matrix with the parameters joined together, top to bottom.\u00a0 Parameters may instead be NULL, in which case they are ignored; or if all parameters are NULL, the result is NULL.\u00a0 A sequence of vectors, matrices, and NULLs may thus be concatenated with the NULL values removed, analogous to c().\u00a0 Calling rbind(x) is an easy way to create a one-row matrix from a vector. To combine vectors or matrices by column instead, see cbind()."
         },
+        "rowSums": {
+            "signatures": [
+                "(numeric)rowSums(lif\u00a0x)"
+            ],
+            "description": "Returns the sums of the rows of x, which must be a matrix.\u00a0 The result is a vector of elements, each providing the sum of the corresponding row of x.\u00a0 If x is of type logical or integer the result will be of type integer; unlike the sum() function, rowSums() does not promote the return type to float if integer overflow occurs, but instead throws an error.\u00a0 If x is of type float the result will be of type float.\u00a0 Except for the change in the treatment of integer overflow noted above, this is equivalent to using apply() with sum() to sum the rows of x, but is much faster."
+        },
         "t": {
             "signatures": [
                 "(*)t(*\u00a0x)"
             ],
             "description": "Returns the transpose of x, which must be a matrix.\u00a0 This is the matrix reflected across its diagonal; or alternatively, the matrix with its columns written out instead as rows in the same order."
+        },
+        "tr": {
+            "signatures": [
+                "(numeric$)tr(numeric\u00a0x)"
+            ],
+            "description": "Returns the trace of x, which must be a square matrix (otherwise an error is raised).\u00a0 The trace is the sum of the diagonal elements of the matrix.\u00a0 The return type will match the type of x."
         },
         "upperTri": {
             "signatures": [
@@ -842,7 +908,7 @@
             "signatures": [
                 "(logical$)deleteFile(string$\u00a0filePath)"
             ],
-            "description": "Deletes the file specified by filePath and returns a logical value indicating if the deletion succeeded (T) or failed (F)."
+            "description": "Deletes the file specified by filePath and returns a logical value indicating if the deletion succeeded (T) or failed (F). This function might also be able to delete a directory at filePath, but only if it is empty (apart from the . and .. directory entries that exist on Un*x filesystems).\u00a0 If other files (including invisible files) exist in the directory, deleteFile() will probably fail as a safety measure, in which case the contained files must be deleted individually first.\u00a0 This is vague because the actual policy regarding deletion of directories will depend upon the operating system, since Eidos achieves the deletion by calling an operating-system function."
         },
         "fileExists": {
             "signatures": [
@@ -1084,7 +1150,7 @@
         },
         "parallelSetTaskThreadCounts": {
             "signatures": [
-                "(void)parallelSetTaskThreadCounts(No$\u00a0dict)"
+                "(void)parallelSetTaskThreadCounts(No<Dictionary>$\u00a0dict)"
             ],
             "description": "Sets the number of threads that is requested to be used for specific tasks in Eidos and SLiM.\u00a0 The dictionary dict should contain string keys that identify tasks, and integer values that provide the number of threads to be used when performing those tasks.\u00a0 For example, a key of \"LOG10_FLOAT\" identifies the task of performing the log10() function on a float vector, and a value of 8 for that key would tell Eidos to use eight threads when performing that task.\u00a0 The number of threads actually used will never be greater than the maximum thread count as returned by parallelGetMaxThreads().\u00a0 Furthermore, a thread count set with parallelSetNumThreads() overrides the per-task setting, so if you wish to set specific per-task thread counts you should not set an overall thread count with parallelSetNumThreads().\u00a0 If dict is NULL, all task thread counts will be reset to their default values. The currently requested thread counts for all tasks can be obtained with parallelGetTaskThreadCounts().\u00a0 Note that the counts returned by that function may not match the counts requested with parallelSetTaskThreadCounts(); in particular, they may be clipped to the maximum number of threads as returned by parallelGetMaxThreads(). The task keys recognized, and the tasks they govern, are: Typically, a dictionary of task keys and thread counts is read from a file and set up with this function at initialization time, but it is also possible to change new task thread counts dynamically.\u00a0 If Eidos is not configured to run multithreaded, this function has no effect."
         },

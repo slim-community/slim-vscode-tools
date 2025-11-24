@@ -94,12 +94,10 @@ def parse_operator_docs(html_path):
 
 
 def main():
-    html_path = "/Users/adk/github/slim-tools/reference_docs/EidosHelpOperators.html"
+    html_path = "EidosHelpOperators.html"
     parsed_data = parse_operator_docs(html_path)
 
-    json_output_path = (
-        "/Users/adk/github/slim-tools/reference_docs/eidos_operators.json"
-    )
+    json_output_path = "../docs/eidos_operators.json"
     with open(json_output_path, "w", encoding="utf-8") as json_file:
         json.dump(parsed_data, json_file, indent=4)
 
