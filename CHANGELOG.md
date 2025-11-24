@@ -51,5 +51,5 @@ Initial release of `slim-tools` with the following features:
 - Updated documentation to SLiM v5.1
 - Improved language configuration (indentation rules, folding, etc.)
 - Updated link in README
-- Added test simulations
+- Added test simulations (and moved the existing one) into `/test-sims`
 - Remove unused files
