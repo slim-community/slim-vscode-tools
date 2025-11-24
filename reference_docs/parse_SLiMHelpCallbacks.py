@@ -48,10 +48,10 @@ def parse_callback_docs(html_path):
 
 
 def main():
-    html_path = "/Users/adk/github/slim-tools/reference_docs/SLiMHelpCallbacks.html"
+    html_path = "SLiMHelpCallbacks.html"
     parsed_data = parse_callback_docs(html_path)
 
-    json_output_path = "/Users/adk/github/slim-tools/reference_docs/slim_callbacks.json"
+    json_output_path = "../docs/slim_callbacks.json"
     with open(json_output_path, "w", encoding="utf-8") as json_file:
         json.dump(parsed_data, json_file, indent=4)
 

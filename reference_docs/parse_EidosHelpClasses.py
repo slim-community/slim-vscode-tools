@@ -167,8 +167,8 @@ def main():
     # Parse the documentation
     docs = parse_slim_docs("EidosHelpClasses.html")
 
-    # Write the result to a JSON file
-    with open("eidos_classes.json", "w", encoding="utf-8") as f:
+    # Write the result to a JSON file in docs folder
+    with open("../docs/eidos_classes.json", "w", encoding="utf-8") as f:
         json.dump(docs, f, indent=4)
 
 

@@ -163,8 +163,8 @@ def main():
     # Parse the documentation
     docs = parse_slim_docs("SLiMHelpClasses.html")
 
-    # Write the result to a JSON file
-    with open("slim_classes.json", "w", encoding="utf-8") as f:
+    # Write the result to a JSON file in docs folder
+    with open("../docs/slim_classes.json", "w", encoding="utf-8") as f:
         json.dump(docs, f, indent=4)
 
 

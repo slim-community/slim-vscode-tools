@@ -26,7 +26,7 @@ def find_global_creating_methods(file_path):
     return global_creating_methods
 
 
-file_path = "/Users/adk/github/slim-tools/reference_docs/slim_classes.json"
+file_path = "../docs/slim_classes.json"
 global_creating_methods = find_global_creating_methods(file_path)
 
 for method in global_creating_methods:
