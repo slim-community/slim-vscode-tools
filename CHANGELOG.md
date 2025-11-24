@@ -53,3 +53,10 @@ Initial release of `slim-tools` with the following features:
 - Updated link in README
 - Added test simulations
 - Remove unused files
+
+## [0.0.8]
+- Refactor the language server and extension from JavaScript to TypeScript
+- Boilerplate for Vitest testing system
+- Small updates to syntax (slim.tmLanguage.json)
+- ESLint/Prettier installed for the project
+- Update .gitignore

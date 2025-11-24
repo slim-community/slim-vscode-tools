@@ -3,15 +3,6 @@
 	"name": "eidos",
 	"patterns": [
 		{
-			"name": "comment.line.double-slash.slim",
-			"match": "//.*$"
-		},
-		{
-			"name": "comment.block.slim",
-			"begin": "/\\*",
-			"end": "\\*/"
-		},
-		{
 			"name": "string.quoted.double.slim",
 			"begin": "\"",
 			"end": "\"",
@@ -32,6 +23,20 @@
 					"match": "\\\\."
 				}
 			]
+		},
+		{
+			"name": "comment.line.double-slash.slim",
+			"match": "(//).*$",
+			"captures": {
+				"1": {
+					"name": "punctuation.definition.comment.slim"
+				}
+			}
+		},
+		{
+			"name": "comment.block.slim",
+			"begin": "/\\*",
+			"end": "\\*/"
 		},
 		{
 			"name": "keyword.control.slim",

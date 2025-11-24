@@ -1,17 +1,25 @@
 {
   "name": "server",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.0.8",
+  "description": "Language server for SLiM VSCode extension",
+  "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest",
+    "test:unit": "vitest run --dir test/unit",
+    "test:integration": "vitest run --dir test/integration"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@types/he": "^1.2.3",
+    "he": "^1.2.0",
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver": "^9.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^4.0.13"
   }
 }

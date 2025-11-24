@@ -154,6 +154,15 @@ Initial release of `slim-tools` with the following features:
 ## [0.0.7]
 - Added better handling of semicolons in the editor
 
+## [0.0.8]
+- Refactor the language server and extension from JavaScript to TypeScript
+- Boilerplate for Vitest testing system
+- Small updates to syntax (slim.tmLanguage.json)
+- ESLint/Prettier installed for the project
+- Update .gitignore
+- Fixed build configuration to compile to ./out
+- Fixed documentation paths
+
 ## Development notes
 
 1. First install the dependencies with `npm install`
