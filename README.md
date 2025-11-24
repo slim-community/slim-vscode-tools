@@ -167,8 +167,20 @@ Initial release of `slim-tools` with the following features:
 - Small updates to syntax (slim.tmLanguage.json)
 - ESLint/Prettier installed for the project
 - Update .gitignore
-- Fixed build configuration to compile to ./out
-- Fixed documentation paths
+
+## [0.0.9]
+- Added `logger.ts` with improved logging features
+- Update language server `index.ts` to use external services and handlers
+- Added `diagnostics.ts` for managing diagnostics information
+- Added `text-processing.ts` for general text manipulation
+- Added `documentation-service.ts` for loading documentation data
+- Added `hover.ts` - implementation of hover info service, plus various util files
+- - `positions.ts` - manages positions of objects in code files
+- - `instance.ts` - manages objects over the 'lifespan' of a file
+- - `type-manager.ts` - infers object types using various rules
+- - `markdown.ts` - manages the creation of markdown hover info
+- - `hover-resolvers.ts` - attempts to resolve what hover info to show
+- Added tests for new functionality
 
 ## Development notes
 
