@@ -60,3 +60,26 @@ Initial release of `slim-tools` with the following features:
 - Small updates to syntax (slim.tmLanguage.json)
 - ESLint/Prettier installed for the project
 - Update .gitignore
+
+## [0.0.9]
+- Refactor: Increase modularity of language server providers and utils for future expansion
+- - `server/src` for all language server code
+- - `server/src/config` for constants and types shared across the language server
+- - - `config.ts` for constants
+- - - `paths.ts` for paths
+- - - `types.ts` for TypeScript types
+- - `server/src/handlers` holds `handlers.ts` for implementing handlers that get sent to `server/index.ts`
+- - `server/src/providers` for providers of individual language server features (fed into `handlers`)
+- - - `completion.ts` for code completion 
+- - - `document-symbols.ts` for outline view
+- - - `hover.ts` for hover info
+- - - `references.ts` for finding all references across the file (not yet implemented)
+- - - `signature-help.ts` for hints about required & optional parameters for functions and methods
+- - `server/src/services` for services used across the language server
+- - - `documentation-service.ts` manages loading documentation
+- - - `validation-service.ts` manages validating code files / checking for errors
+- - `server/src/utils` for general utilities used across the language server
+- - - `instance.ts` for tracking defined objects within the current file
+- - - `positions.ts` for tracking positions in the file
+- - `server/src/validation` for scripts used by the validation service to check for errors
+- - - `structure.ts` for validating the structure of the script (e.g. semicolon-related errors)
