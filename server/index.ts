@@ -167,22 +167,6 @@ function flattenCallbackData(data: any): { [key: string]: CallbackInfo } {
 
 loadDocumentation();
 
-// Add these constants at the top of your file
-// const SLIM_KEYWORDS = [
-//     'initialize', 'early', 'late', 'fitness', 'interaction',
-//     'mateChoice', 'modifyChild', 'mutation', 'recombination'
-// ];
-
-// const SLIM_TYPES = [
-//     'void', 'integer', 'float', 'string', 'logical',
-//     'object', 'numeric', 'NULL', 'INF'
-// ];
-
-// Add this function to check for valid SLiM types
-// function validateSlimType(type: string): boolean {
-//     return SLIM_TYPES.some(validType => type.includes(validType));
-// }
-
 const instanceToClassMap: { [key: string]: string } = {
     sim: 'Species',
     // Add other known instances and their corresponding classes here

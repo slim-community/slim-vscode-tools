@@ -21,38 +21,13 @@ import {
 } from 'vscode-languageclient/node';
 
 import { DocTreeProvider } from './docTreeProvider';
+import { DocSection, ClassInfo } from './types';
 
 // Update paths for all documentation files
 const slimFunctionsPath = path.join(__dirname, '../../docs/slim_functions.json');
 const eidosFunctionsPath = path.join(__dirname, '../../docs/eidos_functions.json');
 const slimClassesPath = path.join(__dirname, '../../docs/slim_classes.json');
 const eidosClassesPath = path.join(__dirname, '../../docs/eidos_classes.json');
-
-// Update type definitions to match the new documentation structure
-interface MethodInfo {
-    signature: string;
-    description: string;
-}
-
-interface PropertyInfo {
-    type: string;
-    description: string;
-}
-
-interface ClassInfo {
-    constructor: {
-        signature?: string;
-        description?: string;
-    };
-    methods: { [key: string]: MethodInfo };
-    properties: { [key: string]: PropertyInfo };
-}
-
-interface DocSection {
-    signature?: string | string[];
-    description?: string;
-    [key: string]: any;
-}
 
 // Update data stores
 let functionsData: { [key: string]: { signature: string; description: string } } = {};
@@ -110,10 +85,13 @@ export function activate(context: ExtensionContext) {
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
         // Register the server for SLiM and Eidos files
-        documentSelector: [{ scheme: 'file', language: 'slim' }],
+        documentSelector: [       
+            { scheme: 'file', language: 'slim' },
+            { scheme: 'file', language: 'eidos' }
+        ],
         synchronize: {
-            // Notify the server about file changes to '.slim' files contained in the workspace
-            fileEvents: workspace.createFileSystemWatcher('**/.clientrc'),
+            // Notify the server about file changes to '.slim/.eidos' files contained in the workspace
+            fileEvents: workspace.createFileSystemWatcher('**/*.{slim,eidos}'),
         },
     };
 
@@ -169,11 +147,11 @@ export function activate(context: ExtensionContext) {
         async (title: string, docObj: DocSection) => {
             let md = `# ${title}\n\n`;
 
-            if (docObj.signature) {
-                // Clean up weird whitespace
-                const rawSig = Array.isArray(docObj.signature)
-                    ? docObj.signature.join('\n')
-                    : docObj.signature;
+            if (docObj.signature || docObj.signatures) {
+                // Handle both singular (classes/callbacks) and plural (functions)
+                const rawSig = docObj.signatures 
+                    ? docObj.signatures.join('\n')
+                    : (docObj.signature || '');
                 const cleanedSig = rawSig.replace(/\u00a0/g, ' '); // replace non-breaking spaces with normal
 
                 md += `**Signature**\n\n`;

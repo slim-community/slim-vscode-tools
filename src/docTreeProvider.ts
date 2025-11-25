@@ -1,17 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-
-interface DocTreeItem extends vscode.TreeItem {
-    resourceUri?: vscode.Uri;
-    jsonChildren?: DocTreeItem[];
-}
-
-interface DocSection {
-    description?: string;
-    signature?: string | string[];
-    type?: string;
-    [key: string]: any;
-}
+import { DocSection, DocTreeItem } from './types';
 
 export class DocTreeProvider implements vscode.TreeDataProvider<DocTreeItem> {
     private docsPath: string;
@@ -64,9 +53,14 @@ export class DocTreeProvider implements vscode.TreeDataProvider<DocTreeItem> {
     private _jsonToTreeItems(obj: any, parentLabel: string | null = null): DocTreeItem[] {
         return Object.entries(obj)
             .map(([key, value]) => {
+                // Convert signatures array to string for display
+                if (key === 'signatures' && Array.isArray(value)) {
+                    value = value.join('\n');
+                }
+
                 // Unified behavior for docLeaf fields
                 if (
-                    ['description', 'signature', 'type'].includes(key) &&
+                    ['description', 'signature', 'signatures', 'type'].includes(key) &&
                     typeof value === 'string'
                 ) {
                     const parent = obj as DocSection;
@@ -84,9 +78,9 @@ export class DocTreeProvider implements vscode.TreeDataProvider<DocTreeItem> {
                     item.iconPath = new vscode.ThemeIcon(
                         key === 'description'
                             ? 'comment'
-                            : key === 'signature'
-                              ? 'symbol-method'
-                              : 'symbol-property'
+                            : key === 'signature' || key === 'signatures'
+                            ? 'symbol-method'
+                            : 'symbol-property'
                     );
                     item.contextValue = 'docLeaf';
                     return item;
@@ -105,7 +99,7 @@ export class DocTreeProvider implements vscode.TreeDataProvider<DocTreeItem> {
 
                     const docValue = value as DocSection;
                     const isDocLike =
-                        'signature' in docValue || 'description' in docValue || 'type' in docValue;
+                        'signature' in docValue || 'signatures' in docValue ||'description' in docValue || 'type' in docValue;
                     if (isDocLike) {
                         item.command = {
                             command: 'slimTools.showDocSection',
@@ -113,7 +107,7 @@ export class DocTreeProvider implements vscode.TreeDataProvider<DocTreeItem> {
                             arguments: [key, { ...docValue }],
                         };
 
-                        if ('signature' in docValue) {
+                        if ('signature' in docValue || 'signatures' in docValue) {
                             item.iconPath = new vscode.ThemeIcon('symbol-method');
                         } else if ('type' in docValue) {
                             item.iconPath = new vscode.ThemeIcon('symbol-property');
