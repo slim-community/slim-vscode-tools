@@ -1,0 +1,21 @@
+# Dependencies
+node_modules
+server/node_modules
+
+# Build outputs
+out
+dist
+*.vsix
+
+# Documentation
+docs
+reference_docs
+
+# Configuration
+package-lock.json
+server/package-lock.json
+
+# Test files
+coverage
+*.log
+

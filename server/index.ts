@@ -1,31 +1,95 @@
-const {
-  createConnection,
-  TextDocuments,
-  ProposedFeatures,
-  DiagnosticSeverity
-} = require('vscode-languageserver/node');
+import {
+    createConnection,
+    TextDocuments,
+    ProposedFeatures,
+    DiagnosticSeverity,
+    InitializeResult,
+    TextDocumentSyncKind,
+    Diagnostic,
+    CompletionItem,
+    CompletionItemKind,
+    Hover,
+    MarkupKind,
+    SignatureHelp,
+    Location,
+} from 'vscode-languageserver/node';
+
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const connection = createConnection(ProposedFeatures.all);
-const { TextDocument } = require('vscode-languageserver-textdocument');
 const documents = new TextDocuments(TextDocument);
-const fs = require('fs');
-const path = require('path');
 
 // Load both function and class documentation
-const slimFunctionsPath = path.join(__dirname, '..', 'docs', 'slim_functions.json');
-const eidosFunctionsPath = path.join(__dirname, '..', 'docs', 'eidos_functions.json');
-const slimClassesPath = path.join(__dirname, '..', 'docs', 'slim_classes.json');
-const eidosClassesPath = path.join(__dirname, '..', 'docs', 'eidos_classes.json');
-const slimCallbacksPath = path.join(__dirname, '..', 'docs', 'slim_callbacks.json');
-const eidosTypesPath = path.join(__dirname, '..', 'docs', 'eidos_types.json');
+const slimFunctionsPath = path.join(__dirname, '../..', 'docs', 'slim_functions.json');
+const eidosFunctionsPath = path.join(__dirname, '../..', 'docs', 'eidos_functions.json');
+const slimClassesPath = path.join(__dirname, '../..', 'docs', 'slim_classes.json');
+const eidosClassesPath = path.join(__dirname, '../..', 'docs', 'eidos_classes.json');
+const slimCallbacksPath = path.join(__dirname, '../..', 'docs', 'slim_callbacks.json');
+const eidosTypesPath = path.join(__dirname, '../..', 'docs', 'eidos_types.json');
 
-let functionsData = {};
-let classesData = {};
-let callbacksData = {};
-let typesData = {};
+// Type definitions
+interface FunctionInfo {
+    signature: string;
+    signatures: string[];
+    description: string;
+    returnType: string;
+    source: string;
+}
+
+interface MethodInfo {
+    signature: string;
+    description: string;
+}
+
+interface PropertyInfo {
+    type: string;
+    description: string;
+}
+
+interface ClassInfo {
+    constructor?: {
+        signature?: string;
+        description?: string;
+    };
+    methods?: { [key: string]: MethodInfo };
+    properties?: { [key: string]: PropertyInfo };
+}
+
+interface CallbackInfo {
+    signature: string;
+    description: string;
+}
+
+interface TypeInfo {
+    description: string;
+}
+
+interface WordContext {
+    isMethodOrProperty: boolean;
+    className?: string;
+    instanceName?: string;
+    instanceClass?: string;
+}
+
+interface WordInfo {
+    word: string;
+    context: WordContext;
+}
+
+interface ConstructorInfo {
+    signature: string;
+    description: string;
+}
+
+let functionsData: { [key: string]: FunctionInfo } = {};
+let classesData: { [key: string]: ClassInfo } = {};
+let callbacksData: { [key: string]: CallbackInfo } = {};
+let typesData: { [key: string]: TypeInfo } = {};
 
 // Load all documentation files
-function loadDocumentation() {
+function loadDocumentation(): void {
     try {
         if (fs.existsSync(slimFunctionsPath)) {
             const slimFunctions = JSON.parse(fs.readFileSync(slimFunctionsPath, 'utf8'));
@@ -49,7 +113,7 @@ function loadDocumentation() {
         }
         if (fs.existsSync(slimCallbacksPath)) {
             const slimCallbacks = JSON.parse(fs.readFileSync(slimCallbacksPath, 'utf8'));
-            callbacksData = { ...callbacksData, ...flattenCallbackData(slimCallbacks) }; // Update this line
+            callbacksData = { ...callbacksData, ...flattenCallbackData(slimCallbacks) };
             console.log('Loaded slim callbacks:', Object.keys(callbacksData));
         }
         if (fs.existsSync(eidosTypesPath)) {
@@ -62,8 +126,8 @@ function loadDocumentation() {
     }
 }
 
-function flattenFunctionData(data, source) {
-    const flattened = {};
+function flattenFunctionData(data: any, source: string): { [key: string]: FunctionInfo } {
+    const flattened: { [key: string]: FunctionInfo } = {};
     for (const category in data) {
         if (data.hasOwnProperty(category)) {
             const functions = data[category];
@@ -78,7 +142,7 @@ function flattenFunctionData(data, source) {
                         ...funcData,
                         signature: signatureWithoutReturnType,
                         returnType: returnType,
-                        source: source
+                        source: source,
                     };
                 }
             }
@@ -87,14 +151,14 @@ function flattenFunctionData(data, source) {
     return flattened;
 }
 
-function flattenCallbackData(data) {
-    const flattened = {};
+function flattenCallbackData(data: any): { [key: string]: CallbackInfo } {
+    const flattened: { [key: string]: CallbackInfo } = {};
     for (const callbackName in data) {
         if (data.hasOwnProperty(callbackName)) {
             const callbackData = data[callbackName];
             flattened[callbackName] = {
                 ...callbackData,
-                signature: callbackData.signature.replace(/\s+(callbacks|events)$/, '')
+                signature: callbackData.signature.replace(/\s+(callbacks|events)$/, ''),
             };
         }
     }
@@ -103,94 +167,79 @@ function flattenCallbackData(data) {
 
 loadDocumentation();
 
-// Add these constants at the top of your file
-const SLIM_KEYWORDS = [
-    'initialize', 'early', 'late', 'fitness', 'interaction',
-    'mateChoice', 'modifyChild', 'mutation', 'recombination'
-];
-
-const SLIM_TYPES = [
-    'void', 'integer', 'float', 'string', 'logical',
-    'object', 'numeric', 'NULL', 'INF'
-];
-
-// Add this function to check for valid SLiM types
-function validateSlimType(type) {
-    return SLIM_TYPES.some(validType => type.includes(validType));
-}
-
-const instanceToClassMap = {
-    'sim': 'Species',
+const instanceToClassMap: { [key: string]: string } = {
+    sim: 'Species',
     // Add other known instances and their corresponding classes here
 };
 
-let instanceDefinitions = {};
+let instanceDefinitions: { [key: string]: string } = {};
 
-function trackInstanceDefinitions(text) {
+function trackInstanceDefinitions(text: string): void {
     const lines = text.split('\n');
     const instanceRegex = /(\w+)\s*=\s*new\s+(\w+)/; // Example: p1 = new Subpopulation
     const subpopRegex = /sim\.addSubpop\("(\w+)",\s*\d+(?:,\s*[^)]*)?\)/; // Example: sim.addSubpop("p1", 100)
     const subpopSplitRegex = /sim\.addSubpopSplit\("(\w+)",\s*\d+(?:,\s*[^)]*)?\)/; // Example: sim.addSubpopSplit("p1", 100, ...)
-    const earlyEventRegex = /community\.registerEarlyEvent\("(\w+)",\s*[^)]*\)/; // Example: community.registerEarlyEvent("event1", ...)
-    const firstEventRegex = /community\.registerFirstEvent\("(\w+)",\s*[^)]*\)/; // Example: community.registerFirstEvent("event1", ...)
-    const interactionCallbackRegex = /community\.registerInteractionCallback\("(\w+)",\s*[^)]*\)/; // Example: community.registerInteractionCallback("event1", ...)
-    const lateEventRegex = /community\.registerLateEvent\("(\w+)",\s*[^)]*\)/; // Example: community.registerLateEvent("event1", ...)
-    const fitnessEffectCallbackRegex = /species\.registerFitnessEffectCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerFitnessEffectCallback("callback1", ...)
-    const mateChoiceCallbackRegex = /species\.registerMateChoiceCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerMateChoiceCallback("callback1", ...)
-    const modifyChildCallbackRegex = /species\.registerModifyChildCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerModifyChildCallback("callback1", ...)
-    const mutationCallbackRegex = /species\.registerMutationCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerMutationCallback("callback1", ...)
-    const mutationEffectCallbackRegex = /species\.registerMutationEffectCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerMutationEffectCallback("callback1", ...)
-    const recombinationCallbackRegex = /species\.registerRecombinationCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerRecombinationCallback("callback1", ...)
-    const reproductionCallbackRegex = /species\.registerReproductionCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerReproductionCallback("callback1", ...)
-    const survivalCallbackRegex = /species\.registerSurvivalCallback\("(\w+)",\s*[^)]*\)/; // Example: species.registerSurvivalCallback("callback1", ...)
+    const earlyEventRegex = /community\.registerEarlyEvent\("(\w+)",\s*[^)]*\)/;
+    const firstEventRegex = /community\.registerFirstEvent\("(\w+)",\s*[^)]*\)/;
+    const interactionCallbackRegex = /community\.registerInteractionCallback\("(\w+)",\s*[^)]*\)/;
+    const lateEventRegex = /community\.registerLateEvent\("(\w+)",\s*[^)]*\)/;
+    const fitnessEffectCallbackRegex = /species\.registerFitnessEffectCallback\("(\w+)",\s*[^)]*\)/;
+    const mateChoiceCallbackRegex = /species\.registerMateChoiceCallback\("(\w+)",\s*[^)]*\)/;
+    const modifyChildCallbackRegex = /species\.registerModifyChildCallback\("(\w+)",\s*[^)]*\)/;
+    const mutationCallbackRegex = /species\.registerMutationCallback\("(\w+)",\s*[^)]*\)/;
+    const mutationEffectCallbackRegex =
+        /species\.registerMutationEffectCallback\("(\w+)",\s*[^)]*\)/;
+    const recombinationCallbackRegex = /species\.registerRecombinationCallback\("(\w+)",\s*[^)]*\)/;
+    const reproductionCallbackRegex = /species\.registerReproductionCallback\("(\w+)",\s*[^)]*\)/;
+    const survivalCallbackRegex = /species\.registerSurvivalCallback\("(\w+)",\s*[^)]*\)/;
 
-    lines.forEach(line => {
-        let match;
+    lines.forEach((line) => {
+        let match: RegExpMatchArray | null;
         switch (true) {
             case (match = line.match(instanceRegex)) !== null:
-                instanceDefinitions[match[1]] = match[2];
+                instanceDefinitions[match![1]] = match![2];
                 break;
             case (match = line.match(subpopRegex)) !== null:
-                instanceDefinitions[match[1]] = 'Subpopulation';
+                instanceDefinitions[match![1]] = 'Subpopulation';
                 break;
             case (match = line.match(subpopSplitRegex)) !== null:
-                instanceDefinitions[match[1]] = 'Subpopulation';
+                instanceDefinitions[match![1]] = 'Subpopulation';
                 break;
             case (match = line.match(earlyEventRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
             case (match = line.match(firstEventRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
             case (match = line.match(interactionCallbackRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
             case (match = line.match(lateEventRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
             case (match = line.match(fitnessEffectCallbackRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
             case (match = line.match(mateChoiceCallbackRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
             case (match = line.match(modifyChildCallbackRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
             case (match = line.match(mutationCallbackRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
             case (match = line.match(mutationEffectCallbackRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
             case (match = line.match(recombinationCallbackRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
             case (match = line.match(reproductionCallbackRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
             case (match = line.match(survivalCallbackRegex)) !== null:
-                instanceDefinitions[match[1]] = 'SLiMEidosBlock';
+                instanceDefinitions[match![1]] = 'SLiMEidosBlock';
                 break;
         }
     });
@@ -199,36 +248,37 @@ function trackInstanceDefinitions(text) {
 documents.listen(connection);
 
 connection.onInitialize(() => {
-    return {
+    const result: InitializeResult = {
         capabilities: {
-            textDocumentSync: documents.syncKind,
+            textDocumentSync: TextDocumentSyncKind.Full,
             completionProvider: {
                 resolveProvider: true,
-                triggerCharacters: ['.'] // Add dot as a trigger character
+                triggerCharacters: ['.'],
             },
             hoverProvider: true,
             referencesProvider: true,
             documentSymbolProvider: true,
             documentFormattingProvider: true,
-            signatureHelpProvider: {   
-                triggerCharacters: ["(", ",", " "],
-                retriggerCharacters: [",", ")"]
-            }
-        }
+            signatureHelpProvider: {
+                triggerCharacters: ['(', ',', ' '],
+                retriggerCharacters: [',', ')'],
+            },
+        },
     };
+    return result;
 });
 
 connection.onInitialized(() => {
-  connection.console.log('SLiM Language Server initialized');
+    connection.console.log('SLiM Language Server initialized');
 });
 
-documents.onDidChangeContent(change => {
-  validateTextDocument(change.document);
+documents.onDidChangeContent((change) => {
+    validateTextDocument(change.document);
 });
 
-async function validateTextDocument(textDocument) {
+async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     const text = textDocument.getText();
-    const diagnostics = [];
+    const diagnostics: Diagnostic[] = [];
     const lines = text.split('\n');
 
     let braceCount = 0;
@@ -242,8 +292,8 @@ async function validateTextDocument(textDocument) {
             return;
         }
 
-        const isSlimBlock = /^\d+\s+\w+\(\)/.test(trimmedLine) ||
-                            /^s\d+\s+\d+\s+\w+\(\)/.test(trimmedLine);
+        const isSlimBlock =
+            /^\d+\s+\w+\(\)/.test(trimmedLine) || /^s\d+\s+\d+\s+\w+\(\)/.test(trimmedLine);
 
         const openBracesInLine = (line.match(/{/g) || []).length;
         const closeBracesInLine = (line.match(/}/g) || []).length;
@@ -259,10 +309,10 @@ async function validateTextDocument(textDocument) {
                 severity: DiagnosticSeverity.Error,
                 range: {
                     start: { line: lineIndex, character: 0 },
-                    end: { line: lineIndex, character: line.length }
+                    end: { line: lineIndex, character: line.length },
                 },
                 message: 'Unexpected closing brace',
-                source: 'slim-tools'
+                source: 'slim-tools',
             });
         }
 
@@ -274,10 +324,10 @@ async function validateTextDocument(textDocument) {
                 severity: DiagnosticSeverity.Warning,
                 range: {
                     start: { line: lineIndex, character: 0 },
-                    end: { line: lineIndex, character: line.length }
+                    end: { line: lineIndex, character: line.length },
                 },
                 message: 'Statement might be missing a semicolon',
-                source: 'slim-tools'
+                source: 'slim-tools',
             });
         }
     });
@@ -291,10 +341,10 @@ async function validateTextDocument(textDocument) {
                 severity: DiagnosticSeverity.Error,
                 range: {
                     start: { line: lastOpenBraceLine, character: 0 },
-                    end: { line: lastOpenBraceLine, character: lines[lastOpenBraceLine].length }
+                    end: { line: lastOpenBraceLine, character: lines[lastOpenBraceLine].length },
                 },
                 message: 'Unclosed brace(s)',
-                source: 'slim-tools'
+                source: 'slim-tools',
             });
         }
     }
@@ -302,10 +352,12 @@ async function validateTextDocument(textDocument) {
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
-
-function shouldHaveSemicolon(line, parenBalance = 0) {
-    const strings = [];
-    const codeWithPlaceholders = line.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, match => {
+function shouldHaveSemicolon(
+    line: string,
+    parenBalance: number = 0
+): { shouldMark: boolean; parenBalance: number } {
+    const strings: string[] = [];
+    const codeWithPlaceholders = line.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, (match) => {
         strings.push(match);
         return `__STRING${strings.length - 1}__`;
     });
@@ -328,7 +380,7 @@ function shouldHaveSemicolon(line, parenBalance = 0) {
         restoredCode.endsWith(';') ||
         restoredCode.endsWith('{') ||
         restoredCode.endsWith('}') ||
-        netParens > 0 || // still inside expression
+        netParens > 0 ||
         /^\s*(if|else|while|for|switch|case|default)\b.*\)?\s*{?\s*$/.test(restoredCode) ||
         /^(initialize|early|late|fitness)\s*\([^)]*\)\s*{?\s*$/.test(restoredCode) ||
         /^\s*(s\d+\s+)?\d+\s+(early|late|reproduction|fitness)\s*\(\)\s*$/.test(restoredCode) ||
@@ -338,48 +390,45 @@ function shouldHaveSemicolon(line, parenBalance = 0) {
 
     return {
         shouldMark: !isDefinitelySafe && netParens === 0,
-        parenBalance: netParens
+        parenBalance: netParens,
     };
 }
 
-
-
-// ✅ Re-added document symbol provider to prevent "Unhandled method" error
 connection.onDocumentSymbol((params) => {
-  const document = documents.get(params.textDocument.uri);
-  if (!document) return [];
+    const document = documents.get(params.textDocument.uri);
+    if (!document) return [];
 
-  const text = document.getText();
-  const symbols = [];
+    const text = document.getText();
+    const symbols: any[] = [];
 
-  const lines = text.split('\n');
-  lines.forEach((line, index) => {
-    const match = line.match(/function\s+(\w+)/);
-    if (match) {
-      symbols.push({
-        name: match[1],
-        kind: 12, // Function kind
-        location: {
-          uri: params.textDocument.uri,
-          range: {
-            start: { line: index, character: 0 },
-            end: { line: index, character: line.length }
-          }
+    const lines = text.split('\n');
+    lines.forEach((line, index) => {
+        const match = line.match(/function\s+(\w+)/);
+        if (match) {
+            symbols.push({
+                name: match[1],
+                kind: 12, // Function kind
+                location: {
+                    uri: params.textDocument.uri,
+                    range: {
+                        start: { line: index, character: 0 },
+                        end: { line: index, character: line.length },
+                    },
+                },
+            });
         }
-      });
-    }
-  });
+    });
 
-  return symbols;
+    return symbols;
 });
 
-connection.onHover((params) => {
+connection.onHover((params): Hover | null => {
     const document = documents.get(params.textDocument.uri);
     if (!document) return null;
 
     const position = params.position;
     const text = document.getText();
-    trackInstanceDefinitions(text); // Track instance definitions
+    trackInstanceDefinitions(text);
     const wordInfo = getWordAndContextAtPosition(text, position);
     console.log('Hover triggered at position:', position);
     console.log('Word info:', wordInfo);
@@ -393,38 +442,42 @@ connection.onHover((params) => {
         console.log('Hover content:', markdown);
         return {
             contents: {
-                kind: "markdown",
-                value: markdown
-            }
+                kind: MarkupKind.Markdown,
+                value: markdown,
+            },
         };
     }
 
     // Check if it's a method or property of a known instance
-    if (context.isMethodOrProperty && (instanceToClassMap[context.className] || classesData[context.className])) {
+    if (
+        context.isMethodOrProperty &&
+        context.className &&
+        (instanceToClassMap[context.className] || classesData[context.className])
+    ) {
         const className = instanceToClassMap[context.className] || context.className;
         if (classesData[className]) {
             // Check methods
-            if (classesData[className].methods && classesData[className].methods[word]) {
-                const methodInfo = classesData[className].methods[word];
+            if (classesData[className].methods && classesData[className].methods![word]) {
+                const methodInfo = classesData[className].methods![word];
                 const markdown = `**${className}.${word}** (method)\n\`\`\`slim\n${methodInfo.signature}\n\`\`\`\n\n${methodInfo.description}`;
                 console.log('Hover content:', markdown);
                 return {
                     contents: {
-                        kind: "markdown",
-                        value: markdown
-                    }
+                        kind: MarkupKind.Markdown,
+                        value: markdown,
+                    },
                 };
             }
             // Check properties
-            if (classesData[className].properties && classesData[className].properties[word]) {
-                const propInfo = classesData[className].properties[word];
+            if (classesData[className].properties && classesData[className].properties![word]) {
+                const propInfo = classesData[className].properties![word];
                 const markdown = `**${className}.${word}** (property)\nType: ${propInfo.type}\n\n${propInfo.description}`;
                 console.log('Hover content:', markdown);
                 return {
                     contents: {
-                        kind: "markdown",
-                        value: markdown
-                    }
+                        kind: MarkupKind.Markdown,
+                        value: markdown,
+                    },
                 };
             }
         }
@@ -437,13 +490,13 @@ connection.onHover((params) => {
         console.log('Hover content:', markdown);
         return {
             contents: {
-                kind: "markdown",
-                value: markdown
-            }
+                kind: MarkupKind.Markdown,
+                value: markdown,
+            },
         };
     }
 
-    // Check if it's a callback by matching the cleaned signature or the original key
+    // Check if it's a callback
     for (const callbackName in callbacksData) {
         const callbackInfo = callbacksData[callbackName];
         if (callbackInfo.signature === word || callbackName.startsWith(word)) {
@@ -451,9 +504,9 @@ connection.onHover((params) => {
             console.log('Hover content:', markdown);
             return {
                 contents: {
-                    kind: "markdown",
-                    value: markdown
-                }
+                    kind: MarkupKind.Markdown,
+                    value: markdown,
+                },
             };
         }
     }
@@ -465,9 +518,9 @@ connection.onHover((params) => {
         console.log('Hover content:', markdown);
         return {
             contents: {
-                kind: "markdown",
-                value: markdown
-            }
+                kind: MarkupKind.Markdown,
+                value: markdown,
+            },
         };
     }
 
@@ -475,20 +528,20 @@ connection.onHover((params) => {
     return null;
 });
 
-// Helper function to get word and its context at position
-function getWordAndContextAtPosition(text, position) {
+function getWordAndContextAtPosition(
+    text: string,
+    position: { line: number; character: number }
+): WordInfo | null {
     const lines = text.split('\n');
     if (position.line >= lines.length) return null;
 
     const line = lines[position.line];
-    const lineUptoCursor = line.slice(0, position.character);
-    
-    // Regular expression to find words and their context
+
     const wordRegex = /\b[a-zA-Z_][a-zA-Z0-9_]*\b/g;
     const dotRegex = /([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)?/g;
 
-    // Check for method/property access pattern (e.g., "ClassName.method" or "object.method")
-    let dotMatch;
+    // Check for method/property access pattern
+    let dotMatch: RegExpExecArray | null;
     while ((dotMatch = dotRegex.exec(line)) !== null) {
         const start = dotMatch.index;
         const end = dotMatch.index + dotMatch[0].length;
@@ -499,14 +552,14 @@ function getWordAndContextAtPosition(text, position) {
                 context: {
                     isMethodOrProperty: true,
                     className: className,
-                    instanceName: dotMatch[1]
-                }
+                    instanceName: dotMatch[1],
+                },
             };
         }
     }
 
     // Find the word at cursor position
-    let match;
+    let match: RegExpExecArray | null;
     while ((match = wordRegex.exec(line)) !== null) {
         const start = match.index;
         const end = match.index + match[0].length;
@@ -516,8 +569,8 @@ function getWordAndContextAtPosition(text, position) {
                 word: match[0],
                 context: {
                     isMethodOrProperty: false,
-                    instanceClass: instanceClass
-                }
+                    instanceClass: instanceClass,
+                },
             };
         }
     }
@@ -525,33 +578,36 @@ function getWordAndContextAtPosition(text, position) {
     return null;
 }
 
-function getAutocompleteContextAtPosition(text, position) {
+function getAutocompleteContextAtPosition(
+    text: string,
+    position: { line: number; character: number }
+): WordInfo | null {
     const lines = text.split('\n');
     if (position.line >= lines.length) return null;
 
     const line = lines[position.line];
     const lineUptoCursor = line.slice(0, position.character);
-    
-    // Regular expression to find words and their context
-    const wordRegex = /\b[a-zA-Z_][a-zA-Z0-9_]*\b/g;
-    const dotRegex = /([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*$/; // Match "instance."
 
-    // Check for method/property access pattern (e.g., "ClassName." or "object.")
-    let dotMatch = lineUptoCursor.match(dotRegex);
+    const wordRegex = /\b[a-zA-Z_][a-zA-Z0-9_]*\b/g;
+    const dotRegex = /([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*$/;
+
+    // Check for method/property access pattern
+    const dotMatch = lineUptoCursor.match(dotRegex);
     if (dotMatch) {
-        const className = instanceDefinitions[dotMatch[1]] || instanceToClassMap[dotMatch[1]] || dotMatch[1];
+        const className =
+            instanceDefinitions[dotMatch[1]] || instanceToClassMap[dotMatch[1]] || dotMatch[1];
         return {
             word: '',
             context: {
                 isMethodOrProperty: true,
                 className: className,
-                instanceName: dotMatch[1]
-            }
+                instanceName: dotMatch[1],
+            },
         };
     }
 
     // Find the word at cursor position
-    let match;
+    let match: RegExpExecArray | null;
     while ((match = wordRegex.exec(lineUptoCursor)) !== null) {
         const start = match.index;
         const end = match.index + match[0].length;
@@ -559,8 +615,8 @@ function getAutocompleteContextAtPosition(text, position) {
             return {
                 word: match[0],
                 context: {
-                    isMethodOrProperty: false
-                }
+                    isMethodOrProperty: false,
+                },
             };
         }
     }
@@ -568,39 +624,50 @@ function getAutocompleteContextAtPosition(text, position) {
     return null;
 }
 
-function extractClassConstructors(classesData) {
-    const classConstructors = {};
+function extractClassConstructors(classesData: { [key: string]: ClassInfo }): {
+    [key: string]: ConstructorInfo;
+} {
+    const classConstructors: { [key: string]: ConstructorInfo } = {};
     for (const className in classesData) {
         const classInfo = classesData[className];
         const constructorInfo = classInfo.constructor || {};
         classConstructors[className] = {
-            signature: constructorInfo.signature && constructorInfo.signature.trim() !== '' ? constructorInfo.signature : 'None',
-            description: constructorInfo.description && constructorInfo.description.trim() !== '' ? constructorInfo.description : 'No constructor method implemented'
+            signature:
+                constructorInfo.signature && constructorInfo.signature.trim() !== ''
+                    ? constructorInfo.signature
+                    : 'None',
+            description:
+                constructorInfo.description && constructorInfo.description.trim() !== ''
+                    ? constructorInfo.description
+                    : 'No constructor method implemented',
         };
     }
     return classConstructors;
 }
 
-// Load class constructors from eidos_classes.json
-const eidosClassesData = JSON.parse(fs.readFileSync(eidosClassesPath, 'utf8'));
+// Load class constructors
+const eidosClassesData: { [key: string]: ClassInfo } = JSON.parse(
+    fs.readFileSync(eidosClassesPath, 'utf8')
+);
 const eidosClassConstructors = extractClassConstructors(eidosClassesData);
 
-// Load class constructors from slim_classes.json
-const slimClassesData = JSON.parse(fs.readFileSync(slimClassesPath, 'utf8'));
+const slimClassesData: { [key: string]: ClassInfo } = JSON.parse(
+    fs.readFileSync(slimClassesPath, 'utf8')
+);
 const slimClassConstructors = extractClassConstructors(slimClassesData);
 
-connection.onCompletion((params) => {
+connection.onCompletion((params): CompletionItem[] => {
     const document = documents.get(params.textDocument.uri);
     if (!document) return [];
 
     const position = params.position;
     const text = document.getText();
-    trackInstanceDefinitions(text); // Track instance definitions
+    trackInstanceDefinitions(text);
 
-    const completions = [];
+    const completions: CompletionItem[] = [];
     const wordInfo = getAutocompleteContextAtPosition(text, position);
 
-    if (wordInfo && wordInfo.context.isMethodOrProperty) {
+    if (wordInfo && wordInfo.context.isMethodOrProperty && wordInfo.context.className) {
         const className = wordInfo.context.className;
 
         if (classesData[className]) {
@@ -612,18 +679,17 @@ connection.onCompletion((params) => {
                     const methodInfo = classInfo.methods[methodName];
                     completions.push({
                         label: methodName,
-                        kind: 2, // Method completion
+                        kind: CompletionItemKind.Method,
                         detail: methodInfo.signature,
                         documentation: {
-                            kind: "markdown",
-                            value: `**${className}.${methodName}** (method)\n\n\`\`\`slim\n${methodInfo.signature}\n\`\`\`\n\n${methodInfo.description}`
+                            kind: MarkupKind.Markdown,
+                            value: `**${className}.${methodName}** (method)\n\n\`\`\`slim\n${methodInfo.signature}\n\`\`\`\n\n${methodInfo.description}`,
                         },
-                        // Add command data to show documentation
                         command: {
                             title: 'Show Documentation',
                             command: 'slimTools.showFunctionDoc',
-                            arguments: [`${className}.${methodName}`]
-                        }
+                            arguments: [`${className}.${methodName}`],
+                        },
                     });
                 }
             }
@@ -634,100 +700,95 @@ connection.onCompletion((params) => {
                     const propInfo = classInfo.properties[propName];
                     completions.push({
                         label: propName,
-                        kind: 10, // Property completion
+                        kind: CompletionItemKind.Property,
                         detail: `Type: ${propInfo.type}`,
                         documentation: {
-                            kind: "markdown",
-                            value: `**${className}.${propName}** (property)\nType: ${propInfo.type}\n\n${propInfo.description}`
+                            kind: MarkupKind.Markdown,
+                            value: `**${className}.${propName}** (property)\nType: ${propInfo.type}\n\n${propInfo.description}`,
                         },
-                        // Add command data to show documentation
                         command: {
                             title: 'Show Documentation',
                             command: 'slimTools.showPropertyDoc',
-                            arguments: [`${className}.${propName}`]
-                        }
+                            arguments: [`${className}.${propName}`],
+                        },
                     });
                 }
             }
         }
     } else {
-        // Add standalone functions to completions
+        // Add standalone functions
         for (const funcName in functionsData) {
             const functionInfo = functionsData[funcName];
             completions.push({
-                label: functionInfo.signature, // Use the signature instead of the key
-                kind: 3, // Function completion
+                label: functionInfo.signature,
+                kind: CompletionItemKind.Function,
                 detail: functionInfo.signature,
                 documentation: {
-                    kind: "markdown",
-                    value: `**${funcName}**\n\n\`\`\`slim\n${functionInfo.signature}\n\`\`\`\n\n${functionInfo.description}`
+                    kind: MarkupKind.Markdown,
+                    value: `**${funcName}**\n\n\`\`\`slim\n${functionInfo.signature}\n\`\`\`\n\n${functionInfo.description}`,
                 },
-                // Add command data to show documentation
                 command: {
                     title: 'Show Documentation',
                     command: 'slimTools.showFunctionDoc',
-                    arguments: [funcName]
-                }
+                    arguments: [funcName],
+                },
             });
         }
 
-        // Add Eidos class constructors to completions
+        // Add Eidos class constructors
         for (const className in eidosClassConstructors) {
             const constructorInfo = eidosClassConstructors[className];
             completions.push({
                 label: className,
-                kind: 7, // Class completion
+                kind: CompletionItemKind.Class,
                 detail: constructorInfo.signature,
                 documentation: {
-                    kind: "markdown",
-                    value: `**${className}** (constructor)\n\n\`\`\`slim\n${constructorInfo.signature}\n\`\`\`\n\n${constructorInfo.description}`
+                    kind: MarkupKind.Markdown,
+                    value: `**${className}** (constructor)\n\n\`\`\`slim\n${constructorInfo.signature}\n\`\`\`\n\n${constructorInfo.description}`,
                 },
-                // Add command data to show documentation
                 command: {
                     title: 'Show Documentation',
                     command: 'slimTools.showConstructorDoc',
-                    arguments: [className]
-                }
+                    arguments: [className],
+                },
             });
         }
 
-        // Add SLiM class constructors to completions
+        // Add SLiM class constructors
         for (const className in slimClassConstructors) {
             const constructorInfo = slimClassConstructors[className];
             completions.push({
                 label: className,
-                kind: 7, // Class completion
+                kind: CompletionItemKind.Class,
                 detail: constructorInfo.signature,
                 documentation: {
-                    kind: "markdown",
-                    value: `**${className}** (constructor)\n\n\`\`\`slim\n${constructorInfo.signature}\n\`\`\`\n\n${constructorInfo.description}`
+                    kind: MarkupKind.Markdown,
+                    value: `**${className}** (constructor)\n\n\`\`\`slim\n${constructorInfo.signature}\n\`\`\`\n\n${constructorInfo.description}`,
                 },
-                // Add command data to show documentation
                 command: {
                     title: 'Show Documentation',
                     command: 'slimTools.showConstructorDoc',
-                    arguments: [className]
-                }
+                    arguments: [className],
+                },
             });
         }
 
-        // Add SLiM callbacks to completions
+        // Add SLiM callbacks
         for (const callbackName in callbacksData) {
             const callbackInfo = callbacksData[callbackName];
             completions.push({
-                label: callbackInfo.signature, // Use the signature instead of the key
-                kind: 3, // Function completion
+                label: callbackInfo.signature,
+                kind: CompletionItemKind.Function,
                 detail: callbackInfo.signature,
                 documentation: {
-                    kind: "markdown",
-                    value: `**${callbackName}**\n\n\`\`\`slim\n${callbackInfo.signature}\n\`\`\`\n\n${callbackInfo.description}`
+                    kind: MarkupKind.Markdown,
+                    value: `**${callbackName}**\n\n\`\`\`slim\n${callbackInfo.signature}\n\`\`\`\n\n${callbackInfo.description}`,
                 },
-                // Add command data to show documentation
                 command: {
                     title: 'Show Documentation',
                     command: 'slimTools.showFunctionDoc',
-                    arguments: [callbackName]
-                }
+                    arguments: [callbackName],
+                },
             });
         }
     }
@@ -735,15 +796,14 @@ connection.onCompletion((params) => {
     return completions;
 });
 
-// This resolves additional information for a completion item
-connection.onCompletionResolve((item) => {
+connection.onCompletionResolve((item): CompletionItem => {
     const [className, memberName] = item.label.split('.');
 
     if (functionsData[item.label]) {
         const functionInfo = functionsData[item.label];
         item.documentation = {
-            kind: "markdown",
-            value: `**${item.label}**\n\n\`\`\`slim\n${functionInfo.signature}\n\`\`\`\n\n${functionInfo.description}`
+            kind: MarkupKind.Markdown,
+            value: `**${item.label}**\n\n\`\`\`slim\n${functionInfo.signature}\n\`\`\`\n\n${functionInfo.description}`,
         };
     } else if (classesData[className]) {
         const classInfo = classesData[className];
@@ -751,14 +811,14 @@ connection.onCompletionResolve((item) => {
         if (classInfo.methods && classInfo.methods[memberName]) {
             const methodInfo = classInfo.methods[memberName];
             item.documentation = {
-                kind: "markdown",
-                value: `**${className}.${memberName}** (method)\n\n\`\`\`slim\n${methodInfo.signature}\n\`\`\`\n\n${methodInfo.description}`
+                kind: MarkupKind.Markdown,
+                value: `**${className}.${memberName}** (method)\n\n\`\`\`slim\n${methodInfo.signature}\n\`\`\`\n\n${methodInfo.description}`,
             };
         } else if (classInfo.properties && classInfo.properties[memberName]) {
             const propInfo = classInfo.properties[memberName];
             item.documentation = {
-                kind: "markdown",
-                value: `**${className}.${memberName}** (property)\nType: ${propInfo.type}\n\n${propInfo.description}`
+                kind: MarkupKind.Markdown,
+                value: `**${className}.${memberName}** (property)\nType: ${propInfo.type}\n\n${propInfo.description}`,
             };
         }
     }
@@ -766,8 +826,7 @@ connection.onCompletionResolve((item) => {
     return item;
 });
 
-// parameter hints
-connection.onSignatureHelp((params) => {
+connection.onSignatureHelp((params): SignatureHelp | null => {
     const document = documents.get(params.textDocument.uri);
     if (!document) return null;
 
@@ -775,41 +834,37 @@ connection.onSignatureHelp((params) => {
     const text = document.getText();
     const word = getWordAndContextAtPosition(text, position);
 
-    console.log("Signature Help Triggered for:", word);
+    console.log('Signature Help Triggered for:', word);
 
-    if (functionsData[word]) {
-        const functionInfo = functionsData[word];
+    if (word && functionsData[word.word]) {
+        const functionInfo = functionsData[word.word];
         const signature = functionInfo.signature;
-        
+
         // Extract parameters from signature
         const paramList = signature.match(/\((.*?)\)/);
-        const parameters = paramList ? paramList[1].split(",").map(p => p.trim()) : [];
+        const parameters = paramList ? paramList[1].split(',').map((p) => p.trim()) : [];
 
         return {
             signatures: [
                 {
                     label: signature,
                     documentation: {
-                        kind: "markdown",
-                        value: `${functionInfo.signature}\n\n${functionInfo.description}`
+                        kind: MarkupKind.Markdown,
+                        value: `${functionInfo.signature}\n\n${functionInfo.description}`,
                     },
-                    parameters: parameters.map(param => ({ label: param }))
-                }
+                    parameters: parameters.map((param) => ({ label: param })),
+                },
             ],
             activeSignature: 0,
-            activeParameter: 0
+            activeParameter: 0,
         };
     }
 
     return null;
 });
 
-// Add this handler for references
-connection.onReferences((params) => {
-    // Just return an empty array for now
+connection.onReferences((): Location[] => {
     return [];
 });
-
-
 
 connection.listen();

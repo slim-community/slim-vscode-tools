@@ -2,7 +2,7 @@
   "name": "slim-vscode-tools",
   "displayName": "slim-tools",
   "description": "language extension for the SLiM simulation package",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "icon": "slim_icon.png",
   "publisher": "andrewkern",
   "repository": {
@@ -13,7 +13,7 @@
     "url": "https://github.com/slim-community/slim-vscode-tools/issues"
   },
   "homepage": "https://github.com/slim-community/slim-vscode-tools",
-  "main": "index.js",
+  "main": "./out/src/extension.js",
   "engines": {
     "vscode": "^1.96.0"
   },
@@ -36,7 +36,6 @@
           ".slim"
         ],
         "firstLine": "^#!.*\\bslim\\b",
-
         "configuration": "./language-configuration.json"
       }
     ],
@@ -91,16 +90,28 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -p ./ --watch",
-    "clean": "rimraf out dist coverage && npm cache clean --force",
+    "watch-server": "tsc -p ./ --watch",
+    "clean": "rimraf out dist coverage dist && npm cache clean --force",
+    "lint": "eslint src/**/*.ts server/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts server/**/*.ts --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"server/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"server/**/*.ts\"",
     "prepublish": "npm run compile",
-    "package": "vsce package",
+    "package": "npm run compile && vsce package",
     "prepublishOnly": "rimraf out dist coverage node_modules && npm cache clean --force"
   },
   "devDependencies": {
     "@types/node": "^16.18.126",
+    "@types/tmp": "^0.2.6",
     "@types/vscode": "^1.96.0",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.3",
     "vscode-test": "^1.6.1"
   },
   "dependencies": {
