@@ -7,7 +7,7 @@ export const INSTANCE_TO_CLASS_MAP: { [key: string]: string } = {
     // Add other known instances and their corresponding classes here
 };
 
-// SLiM keywords (for potential future use)
+// SLiM keywords
 export const SLIM_KEYWORDS = [
     'initialize',
     'early',
@@ -20,7 +20,7 @@ export const SLIM_KEYWORDS = [
     'recombination',
 ];
 
-// SLiM types (for potential future use)
+// SLiM types
 export const SLIM_TYPES = [
     'void',
     'integer',
