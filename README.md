@@ -1,4 +1,4 @@
-# slim-vscode-tools README
+# SLiM VS Code Extension
 
 `slim-vscode-tools` is a Visual Studio Code extension designed to provide comprehensive support for the SLiM simulation package. This extension includes features such as syntax highlighting, snippets, IntelliSense, and commands to enhance the development experience for SLiM scripts.
 
@@ -18,14 +18,13 @@ Provides syntax highlighting for SLiM scripts using a TextMate grammar. This inc
 
 ### Hover Information
 
-Will show a tooltip with the function signature and complete documentation for the function for the SLiM help system.
+Shows a tooltip with the function signature and complete documentation from the SLiM help system.
 
 ![Hover Information](./images/hover_over_docs.png)
 
 ### Auto-completion
 
-Provides auto-completion for SLiM keywords, functions, and variables.
-Will show a tooltip with the function signature and description.
+Provides auto-completion for SLiM keywords, functions, and variables, showing a tooltip with the function signature and description.
 
 ![Auto-completion](./images/autocomplete.png)
 
@@ -54,9 +53,9 @@ Adds a custom view in the activity bar with a command to run SLiM scripts:
 ### Documentation Tree View
 Offers a tree view to the sidebar that shows the full hierarchy of classes, methods, properties, etc.,
 as presented in the native `SLiMgui` help system.
-The documentation pages are displayed in a heirarchical, tree view format, where opening
+The documentation pages are displayed in a hierarchical, tree view format, where opening
 subsequent tabs shows the documentation for the selected item.
-Clicking on indivual items in the tree view such as methods or properties opens the corresponding
+Clicking on individual items in the tree view such as methods or properties opens the corresponding
 section of the slim documentation in a webview.
 
 ![Documentation Tree View](./images/doc_view.png)
@@ -69,32 +68,27 @@ Also adds a command to run the SLiM script in Activity Bar.
 
 ## Requirements
 
-- Visual Studio Code version 1.98.0 or higher
+- Visual Studio Code version 1.96.0 or higher
 - SLiM interpreter installed and accessible in your system's PATH or configured in the extension settings
 
 ## Installation
 
-Currently this extension is not published to the marketplace, so you will need to install it manually.
+### From the VS Code Marketplace (Recommended)
+1. Open VS Code
+2. Go to Extensions View by pressing Ctrl+Shift+X (Windows/Linux) or Cmd+Shift+X (Mac)
+3. Search for "slim-tools"
+4. Click Install
 
-There are a few ways to do this:
-
-You can build from source:
+### From Source
 1. Clone the repository
 2. Run `npm install` to install the dependencies
 3. Run `npm run package` to package the extension
 4. Install the resulting package with `code --install-extension slim-vscode-tools-<current-version-number>-.vsix` (this assumes you've installed the `vscode` command line tool)
 
-You can use the prepackaged package from the releases:
-1. get the latest version from the [GitHub repository](https://github.com/slim-community/slim-tools/releases)
-2. Install the `.vsix` file manually with `code --install-extension slim-vscode-tools-<current-version-number>-.vsix`
-
-Optionally you can install the `.vsix` file from within `vscode` by:
-1. Open `vscode`.
-2. Go to Extensions View by pressing Ctrl+Shift+X (Windows/Linux) or Cmd+Shift+X (Mac).
-3. Click on the More Actions (⋮) menu at the top right of the Extensions panel.
-4. Select "Install from VSIX...".
-5. Locate and select the .vsix file from your system.
-6. Click Install and wait for it to complete.
+### From GitHub Releases
+1. Download the latest `.vsix` file from the [GitHub releases](https://github.com/slim-community/slim-vscode-tools/releases)
+2. Install via command line: `code --install-extension slim-vscode-tools-<version>.vsix`
+3. Or install from within VS Code: Extensions View → More Actions (⋮) → "Install from VSIX..."
 
 ## Extension Settings
 
@@ -120,14 +114,14 @@ Diagnostics are displayed as:
 
 ## Release Notes
 
-### 0.0.1-beta
+## [0.0.1-beta]
 Added new features:
 - Real-time syntax checking and validation
 - SLiM-specific block structure validation
 - Enhanced error reporting with inline diagnostics
 - Support for generation-prefixed blocks
 
-### 0.0.1
+## [0.0.1]
 Initial release of `slim-tools` with the following features:
 - Syntax highlighting for SLiM scripts
 - Snippets for common SLiM patterns
@@ -135,17 +129,17 @@ Initial release of `slim-tools` with the following features:
 - Custom view and command to run SLiM scripts
 - Status bar integration
 
-### 0.0.2
+## [0.0.2]
 - Full, auto-parsed SLiM documentation now appears in an object-oriented aware way
 - Hover / autocomplete for Classes, their properties and methods, etc. 
 
-### 0.0.3
+## [0.0.3]
 - Documentation Tree view now shows the full hierarchy of classes, methods, properties, etc.
 - Clicking on document item in the tree view opens the corresponding section of the slim documentation in a webview
 - Improvements in semicolon handling to be more C++ like
 
-### 0.0.4
-- this is only a number bump to include a better icon on the marketplace
+## [0.0.4]
+- This is only a number bump to include a better icon on the marketplace
 
 ## [0.0.5]
 - Added GH action to auto-publish the extension to the marketplace
@@ -172,26 +166,13 @@ Initial release of `slim-tools` with the following features:
 
 ## [0.0.9]
 - Refactor: Increase modularity of language server providers and utils for future expansion
-- - `server/src` for all language server code
-- - `server/src/config` for constants and types shared across the language server
-- - - `config.ts` for constants
-- - - `paths.ts` for paths
-- - - `types.ts` for TypeScript types
-- - `server/src/handlers` holds `handlers.ts` for implementing handlers that get sent to `server/index.ts`
-- - `server/src/providers` for providers of individual language server features (fed into `handlers`)
-- - - `completion.ts` for code completion 
-- - - `document-symbols.ts` for outline view
-- - - `hover.ts` for hover info
-- - - `references.ts` for finding all references across the file (not yet implemented)
-- - - `signature-help.ts` for hints about required & optional parameters for functions and methods
-- - `server/src/services` for services used across the language server
-- - - `documentation-service.ts` manages loading documentation
-- - - `validation-service.ts` manages validating code files / checking for errors
-- - `server/src/utils` for general utilities used across the language server
-- - - `instance.ts` for tracking defined objects within the current file
-- - - `positions.ts` for tracking positions in the file
-- - `server/src/validation` for scripts used by the validation service to check for errors
-- - - `structure.ts` for validating the structure of the script (e.g. semicolon-related errors)
+  - `server/src/` - All language server code
+  - `server/src/config/` - Constants and types shared across the language server
+  - `server/src/handlers/` - LSP handler setup
+  - `server/src/providers/` - Individual language server feature providers (completion, hover, etc.)
+  - `server/src/services/` - Documentation loading and validation services
+  - `server/src/utils/` - General utilities (instance tracking, position helpers)
+  - `server/src/validation/` - Structure validation scripts
 
 ## Development notes
 
