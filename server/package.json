@@ -4,7 +4,7 @@
   "description": "Language server for SLiM VSCode extension",
   "main": "index.ts",
   "scripts": {
-    "test": "vitest",
+    "test": "vitest --passWithNoTests",
     "test:unit": "vitest run --dir test/unit",
     "test:integration": "vitest run --dir test/integration"
   },
