@@ -109,16 +109,16 @@ export class DocumentationService {
 
     public getFunctions(mode?: LanguageMode): Record<string, FunctionInfo> {
         if (!mode) {
-            return FUNCTIONS_DATA;
+            return this.functionsData;
         }
-        return this.filterByLanguageMode(FUNCTIONS_DATA, mode);
+        return this.filterByLanguageMode(this.functionsData, mode);
     }
 
     public getClasses(mode?: LanguageMode): Record<string, ClassInfo> {
         if (!mode) {
-            return CLASSES_DATA;
+            return this.classesData;
         }
-        return this.filterByLanguageMode(CLASSES_DATA, mode);
+        return this.filterByLanguageMode(this.classesData, mode);
     }
 
     public getCallbacks(mode?: LanguageMode): Record<string, CallbackInfo> {

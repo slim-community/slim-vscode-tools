@@ -20,10 +20,7 @@ export function setupHandlers(
     connection: Connection,
     documents: TextDocuments<TextDocument>
 ): InitializeResult {
-    // Initialize documentation service
     const documentationService = new DocumentationService();
-    
-    // Initialize completion service (depends on documentation service)
     const completionService = new CompletionService(documentationService);
     
     // Create language server context
@@ -52,7 +49,6 @@ export function setupHandlers(
         },
     };
 
-    // Document change handler
     documents.onDidChangeContent((change) => {
         validateTextDocument(change.document, connection);
     });

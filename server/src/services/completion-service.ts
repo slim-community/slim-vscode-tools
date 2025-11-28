@@ -268,7 +268,7 @@ export class CompletionService {
         const signature = functionInfo.signature || functionInfo.signatures?.[0] || '';
         const cleanedSignature = cleanSignature(signature);
         return {
-            label: cleanedSignature,
+            label: functionName,
             kind: CompletionItemKind.Function,
             detail: cleanedSignature,
             data: {
@@ -289,7 +289,7 @@ export class CompletionService {
     ): CompletionItem {
         const cleanedSignature = cleanSignature(callbackInfo.signature);
         return {
-            label: cleanedSignature,
+            label: callbackName,
             kind: CompletionItemKind.Function,
             detail: cleanedSignature,
             data: {
@@ -331,9 +331,9 @@ export class CompletionService {
     ): CompletionItem {
         const cleanedSignature = cleanSignature(operatorInfo.signature);
         return {
-            label: cleanedSignature,
+            label: operatorName,
             kind: CompletionItemKind.Operator,
-            detail: operatorName,
+            detail: cleanedSignature,
             data: {
                 type: 'operator',
                 operatorName,
