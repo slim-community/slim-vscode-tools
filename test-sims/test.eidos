@@ -1,0 +1,251 @@
+// PREDATOR-PREY DYNAMICS SIMULATOR
+// A Lotka-Volterra Model Implementation in Eidos by Chris Talbot
+// This script simulates classic predator-prey dynamics without using any
+// SLiM-specific features (no population genetics, callbacks, or genomic elements)
+
+print("ECOLOGICAL PREDATOR-PREY DYNAMICS SIMULATOR");
+
+// MODEL PARAMETERS
+
+// Prey parameters (rabbits)
+alpha = 1.0;      // Prey birth rate
+beta = 0.1;       // Predation rate coefficient
+
+// Predator parameters (foxes)
+delta = 0.075;    // Predator efficiency (prey -> predator conversion)
+gamma = 1.5;      // Predator death rate
+
+// Initial populations
+prey_init = 250.0;
+predator_init = 10.0;
+
+// Simulation parameters
+generations = 400;
+dt = 0.1;  // Time step size
+
+// Environmental stochasticity
+stochasticity = 0.1;
+
+print("Model Parameters");
+print("Prey birth rate (α): " + alpha);
+print("Predation rate (β): " + beta);
+print("Predator efficiency (δ): " + delta);
+print("Predator death rate (γ): " + gamma);
+print("Initial populations:");
+print("  Prey (rabbits): " + prey_init);
+print("  Predators (foxes): " + predator_init);
+print("Generations: " + generations);
+print("Time step: " + dt);
+print("Stochasticity: " + (stochasticity * 100) + "% (0 = deterministic)");
+
+// SIMULATION FUNCTIONS
+
+function (float)clamp(float value, float min_val, float max_val) {
+    // Ensure value stays within bounds
+    if (value < min_val) return min_val;
+    if (value > max_val) return max_val;
+    return value;
+}
+
+function (float)addNoise(float value, float noise_level) {
+    // Add proportional noise to a value
+    noise = rnorm(1, mean=1.0, sd=noise_level);
+    return value * noise;
+}
+
+function (void)printPopulations(integer gen, float prey, float predator) {
+    // Print population status with visual representation
+    prey_bars = asInteger(clamp(prey / 5.0, 0.0, 50.0));  // Scale for visualization
+    predator_bars = asInteger(clamp(predator / 2.0, 0.0, 50.0));
+    
+    prey_viz = paste(rep("-", prey_bars), sep="");
+    pred_viz = paste(rep("=", predator_bars), sep="");
+    
+    print("Gen " + format("%3d", gen) + " | " + 
+          "Prey: " + format("%6.1f", prey) + " " + prey_viz);
+    print("        | " + 
+          "Pred: " + format("%6.1f", predator) + " " + pred_viz);
+}
+
+function (float)calculateEquilibrium(string type, 
+                                     float a, float b, float d, float g) {
+    // Calculate theoretical equilibrium point
+    // Prey equilibrium: P* = γ/(δβ)
+    // Predator equilibrium: F* = α/β
+    if (type == "prey")
+        return g / (d * b);  // Prey equilibrium = γ/(δβ)
+    else
+        return a / b;  // Predator equilibrium = α/β
+}
+
+// INITIALIZE STORAGE
+
+prey_history = float(generations);
+predator_history = float(generations);
+time_points = float(generations);
+
+prey_history[0] = prey_init;
+predator_history[0] = predator_init;
+time_points[0] = 0.0;
+
+// Track system statistics
+extinct_prey = F;
+extinct_predator = F;
+extinction_time = -1;
+
+// RUN SIMULATION
+
+print("Running Simulation...");
+
+prey_current = prey_init;
+predator_current = predator_init;
+
+for (gen in 1:(generations-1)) {
+    
+    // Lotka-Volterra with RK4 for numerical stability
+    // dP/dt = αP - βPF  (Prey dynamics)
+    // dF/dt = δβPF - γF (Predator dynamics)
+    
+    // RK4 Step 1 (at current point)
+    k1_prey = (alpha * prey_current - beta * prey_current * predator_current) * dt;
+    k1_pred = (delta * beta * prey_current * predator_current - gamma * predator_current) * dt;
+    
+    // RK4 Step 2 (at midpoint using k1)
+    prey_mid1 = prey_current + k1_prey / 2.0;
+    pred_mid1 = predator_current + k1_pred / 2.0;
+    k2_prey = (alpha * prey_mid1 - beta * prey_mid1 * pred_mid1) * dt;
+    k2_pred = (delta * beta * prey_mid1 * pred_mid1 - gamma * pred_mid1) * dt;
+    
+    // RK4 Step 3 (at midpoint using k2)
+    prey_mid2 = prey_current + k2_prey / 2.0;
+    pred_mid2 = predator_current + k2_pred / 2.0;
+    k3_prey = (alpha * prey_mid2 - beta * prey_mid2 * pred_mid2) * dt;
+    k3_pred = (delta * beta * prey_mid2 * pred_mid2 - gamma * pred_mid2) * dt;
+    
+    // RK4 Step 4 (at endpoint using k3)
+    prey_end = prey_current + k3_prey;
+    pred_end = predator_current + k3_pred;
+    k4_prey = (alpha * prey_end - beta * prey_end * pred_end) * dt;
+    k4_pred = (delta * beta * prey_end * pred_end - gamma * pred_end) * dt;
+    
+    // Weighted average of slopes
+    prey_change = (k1_prey + 2.0*k2_prey + 2.0*k3_prey + k4_prey) / 6.0;
+    predator_change = (k1_pred + 2.0*k2_pred + 2.0*k3_pred + k4_pred) / 6.0;
+    
+    // Add environmental stochasticity (optional)
+    if (stochasticity > 0) {
+        prey_change = addNoise(prey_change, stochasticity);
+        predator_change = addNoise(predator_change, stochasticity);
+    }
+    
+    // Update populations
+    prey_current = prey_current + prey_change;
+    predator_current = predator_current + predator_change;
+    
+    // Detect extinction
+    if (prey_current < 0.1) {
+        prey_current = 0.0;
+        if (!extinct_prey) {
+            extinct_prey = T;
+            extinction_time = gen;
+        }
+    }
+    
+    if (predator_current < 0.1) {
+        predator_current = 0.0;
+        if (!extinct_predator) {
+            extinct_predator = T;
+            if (extinction_time == -1)
+                extinction_time = gen;
+        }
+    }
+    
+    // Store results
+    prey_history[gen] = prey_current;
+    predator_history[gen] = predator_current;
+    time_points[gen] = gen * dt;
+    
+    // Print every 25 generations
+    if (gen % 10 == 0 | gen == 1)
+        printPopulations(gen, prey_current, predator_current);
+    
+    // Stop if both extinct
+    if (extinct_prey & extinct_predator)
+        break;
+}
+
+// ANALYSIS AND SUMMARY
+
+print("Simulation Results");
+
+// Calculate summary statistics
+final_gen = generations - 1;
+if (extinct_prey | extinct_predator)
+    final_gen = extinction_time;
+
+// Statistics for viable portion of simulation
+viable_range = 0:(final_gen-1);
+prey_viable = prey_history[viable_range];
+predator_viable = predator_history[viable_range];
+
+print("Population Statistics:");
+print("  Prey (Rabbits):");
+print("    Final: " + format("%.1f", prey_history[final_gen]));
+print("    Mean: " + format("%.1f", mean(prey_viable)));
+print("    Range: [" + format("%.1f", min(prey_viable)) + ", " + 
+      format("%.1f", max(prey_viable)) + "]");
+print("    SD: " + format("%.1f", sd(prey_viable)));
+
+print("  Predators (Foxes):");
+print("    Final: " + format("%.1f", predator_history[final_gen]));
+print("    Mean: " + format("%.1f", mean(predator_viable)));
+print("    Range: [" + format("%.1f", min(predator_viable)) + ", " + 
+      format("%.1f", max(predator_viable)) + "]");
+print("    SD: " + format("%.1f", sd(predator_viable)));
+
+// Theoretical equilibrium
+prey_eq = calculateEquilibrium("prey", alpha, beta, delta, gamma);
+predator_eq = calculateEquilibrium("predator", alpha, beta, delta, gamma);
+
+print("Theoretical Equilibrium:");
+print("  Prey: " + format("%.1f", prey_eq));
+print("  Predators: " + format("%.1f", predator_eq));
+
+print("Observed vs Theoretical:");
+print("  Prey deviation: " + format("%.1f", abs(mean(prey_viable) - prey_eq)) + 
+      " (" + format("%.1f", abs(mean(prey_viable) - prey_eq) / prey_eq * 100) + "%)");
+print("  Predator deviation: " + format("%.1f", abs(mean(predator_viable) - predator_eq)) + 
+      " (" + format("%.1f", abs(mean(predator_viable) - predator_eq) / predator_eq * 100) + "%)");
+
+// Extinction analysis
+if (extinct_prey | extinct_predator) {
+    print("EXTINCTION EVENT");
+    print("  Time: Generation " + extinction_time);
+    if (extinct_prey)
+        print("  Species: Prey (Rabbits)");
+    if (extinct_predator)
+        print("  Species: Predators (Foxes)");
+} else {
+    print("Both populations persisted throughout simulation");
+}
+
+// Calculate oscillation period (if populations cycle)
+if (!extinct_prey & !extinct_predator) {
+    // Find peaks in prey population
+    peaks = integer(0);
+    for (i in 1:(length(prey_viable)-2)) {
+        if (prey_viable[i] > prey_viable[i-1] & 
+            prey_viable[i] > prey_viable[i+1])
+            peaks = c(peaks, i);
+    }
+    
+    if (length(peaks) >= 2) {
+        peak_intervals = peaks[1:(length(peaks)-1)] - peaks[0:(length(peaks)-2)];
+        avg_period = mean(peak_intervals);
+        print("Oscillation Analysis:");
+        print("  Number of cycles: " + (length(peaks) - 1));
+        print("  Average period: " + format("%.1f", avg_period) + " generations");
+    }
+}
+
+print("Simulation complete!");
