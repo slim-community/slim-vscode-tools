@@ -120,14 +120,14 @@ Diagnostics are displayed as:
 
 ## Release Notes
 
-## [0.0.1-beta]
+### [0.0.1-beta]
 Added new features:
 - Real-time syntax checking and validation
 - SLiM-specific block structure validation
 - Enhanced error reporting with inline diagnostics
 - Support for generation-prefixed blocks
 
-## [0.0.1]
+### [0.0.1]
 Initial release of `slim-tools` with the following features:
 - Syntax highlighting for SLiM scripts
 - Snippets for common SLiM patterns
@@ -135,16 +135,16 @@ Initial release of `slim-tools` with the following features:
 - Custom view and command to run SLiM scripts
 - Status bar integration
 
-## [0.0.2]
+### [0.0.2]
 - Full, auto-parsed SLiM documentation now appears in an object-oriented aware way
 - Hover / autocomplete for Classes, their properties and methods, etc. 
 
-## [0.0.3]
+### [0.0.3]
 - Documentation Tree view now shows the full hierarchy of classes, methods, properties, etc.
 - Clicking on document item in the tree view opens the corresponding section of the slim documentation in a webview
 - Improvements in semicolon handling to be more C++ like
 
-## [0.0.4]
+### [0.0.4]
 - This is only a number bump to include a better icon on the marketplace
 
 ### [0.0.5]
