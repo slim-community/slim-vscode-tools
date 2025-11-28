@@ -1,21 +1,30 @@
 import { SignatureHelp, SignatureHelpParams, MarkupKind } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getWordAndContextAtPosition } from '../utils/positions';
-import { functionsData } from '../services/documentation-service';
+import { LanguageServerContext } from '../config/types';
+import { getFileType } from '../utils/file-type';
 
 export function onSignatureHelp(
     params: SignatureHelpParams,
-    document: TextDocument
+    document: TextDocument,
+    context: LanguageServerContext
 ): SignatureHelp | null {
     const position = params.position;
     const text = document.getText();
+    
+    // Determine file type and get filtered data from service
+    const fileType = getFileType(document);
+    const availableFunctions = context.documentationService.getFunctions(fileType);
+    
     const word = getWordAndContextAtPosition(text, position);
 
-    console.log('Signature Help Triggered for:', word);
+    if (word && availableFunctions[word.word]) {
+        const functionInfo = availableFunctions[word.word];
+        const signature = functionInfo.signature || '';
 
-    if (word && functionsData[word.word]) {
-        const functionInfo = functionsData[word.word];
-        const signature = functionInfo.signature;
+        if (!signature) {
+            return null;
+        }
 
         // Extract parameters from signature
         const paramList = signature.match(/\((.*?)\)/);
@@ -27,7 +36,7 @@ export function onSignatureHelp(
                     label: signature,
                     documentation: {
                         kind: MarkupKind.Markdown,
-                        value: `${functionInfo.signature}\n\n${functionInfo.description}`,
+                        value: `${signature}\n\n${functionInfo.description}`,
                     },
                     parameters: parameters.map((param) => ({ label: param })),
                 },

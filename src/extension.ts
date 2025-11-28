@@ -110,30 +110,59 @@ export function activate(context: ExtensionContext) {
     const slimCommandsProvider = new SlimCommandsProvider();
     window.registerTreeDataProvider('slimCommandsView', slimCommandsProvider);
 
-    // Create Status Bar Button
+    // Create Status Bar Button - dynamically updates based on active file
     const statusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 100);
-    statusBarItem.text = '$(play) Run SLiM';
-    statusBarItem.tooltip = 'Run SLiM on the currently open file';
+    
+    const updateStatusBar = () => {
+        const editor = window.activeTextEditor;
+        if (editor) {
+            const isEidosFile = editor.document.fileName.endsWith('.eidos');
+            const isSlimFile = editor.document.fileName.endsWith('.slim');
+            
+            if (isEidosFile || isSlimFile) {
+                statusBarItem.text = isEidosFile ? '$(play) Run Eidos' : '$(play) Run SLiM';
+                statusBarItem.tooltip = isEidosFile 
+                    ? 'Run Eidos on the currently open file' 
+                    : 'Run SLiM on the currently open file';
+                statusBarItem.show();
+            } else {
+                statusBarItem.hide();
+            }
+        } else {
+            statusBarItem.hide();
+        }
+    };
+    
     statusBarItem.command = 'slimTools.runSLiM';
-    statusBarItem.show();
+    updateStatusBar();
+    
+    // Update status bar when active editor changes
+    window.onDidChangeActiveTextEditor(updateStatusBar);
+    context.subscriptions.push(statusBarItem);
 
-    // Register the SLiM execution command
+    // Register the SLiM/Eidos execution command
     const runSlimCommand = commands.registerCommand('slimTools.runSLiM', () => {
         const editor = window.activeTextEditor;
         if (!editor) {
-            window.showErrorMessage('No active SLiM file.');
+            window.showErrorMessage('No active SLiM or Eidos file.');
             return;
         }
 
-        // Get the SLiM interpreter path from user settings
-        const config = workspace.getConfiguration('slimTools');
-        const slimPath = config.get<string>('slimInterpreterPath', 'slim'); // Default to "slim"
-
         const filePath = editor.document.fileName;
+        const isEidosFile = filePath.endsWith('.eidos');
+        
+        // Get the interpreter path from user settings
+        const config = workspace.getConfiguration('slimTools');
+        const interpreterPath = config.get<string>('slimInterpreterPath', 'slim');
 
-        // Run SLiM in a new terminal
-        const terminal = window.createTerminal('SLiM Simulation');
-        terminal.sendText(`${slimPath} "${filePath}"`);
+        // For Eidos files, we can use the 'eidos' command if available, otherwise 'slim' works too
+        // since SLiM includes the Eidos interpreter
+        const command = isEidosFile && interpreterPath === 'slim' ? 'eidos' : interpreterPath;
+        const terminalName = isEidosFile ? 'Eidos Interpreter' : 'SLiM Simulation';
+
+        // Run in a new terminal
+        const terminal = window.createTerminal(terminalName);
+        terminal.sendText(`${command} "${filePath}"`);
         terminal.show();
     });
 
@@ -198,7 +227,6 @@ export function activate(context: ExtensionContext) {
     // Register everything in the extension context
     context.subscriptions.push(
         runSlimCommand,
-        statusBarItem,
         showDocCommand,
         showFunctionDocCommand
     );

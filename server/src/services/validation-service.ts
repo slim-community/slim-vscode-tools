@@ -1,6 +1,7 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, Connection } from 'vscode-languageserver/node';
 import { shouldHaveSemicolon } from '../validation/structure';
+import { getFileType } from '../utils/file-type';
 
 export async function validateTextDocument(
     textDocument: TextDocument,
@@ -9,6 +10,9 @@ export async function validateTextDocument(
     const text = textDocument.getText();
     const diagnostics: Diagnostic[] = [];
     const lines = text.split('\n');
+    
+    // Determine file type for appropriate validation
+    const fileType = getFileType(textDocument);
 
     let braceCount = 0;
     let lastOpenBraceLine = -1;
@@ -21,8 +25,9 @@ export async function validateTextDocument(
             return;
         }
 
-        const isSlimBlock =
-            /^\d+\s+\w+\(\)/.test(trimmedLine) || /^s\d+\s+\d+\s+\w+\(\)/.test(trimmedLine);
+        // SLiM-specific callback/event block pattern (not applicable to Eidos)
+        const isSlimBlock = fileType === 'slim' && 
+            (/^\d+\s+\w+\(\)/.test(trimmedLine) || /^s\d+\s+\d+\s+\w+\(\)/.test(trimmedLine));
 
         const openBracesInLine = (line.match(/{/g) || []).length;
         const closeBracesInLine = (line.match(/}/g) || []).length;

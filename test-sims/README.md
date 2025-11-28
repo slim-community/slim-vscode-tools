@@ -46,3 +46,12 @@ This folder contains various SLiM simulation scripts for testing and demonstrati
 - Implements reprising (reflecting) boundaries where offspring bounce off edges
 - Competition based on neighbor density within distance 0.3
 - Offspring positioned near parents with small spatial perturbation
+
+### test.eidos
+**Predator-Prey Dynamics Simulator (Lotka-Volterra Model)**
+- Lotka-Volterra model implemented by Chris Talbot in pure Eidos (no SLiM features)
+- Models classic predator-prey dynamics between rabbits (prey) and foxes (predators)
+- Includes environmental stochasticity parameter for realistic population fluctuations
+- Tracks populations over 400 generations with visual output
+- Compares observed dynamics to theoretical equilibrium predictions with deviation analysis
+- Useful for testing .eidos file type support and Eidos-only language features

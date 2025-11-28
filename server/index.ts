@@ -4,15 +4,11 @@ import {
     ProposedFeatures,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { loadDocumentation } from './src/services/documentation-service';
 import { setupHandlers } from './src/handlers/handlers';
 
 // Create connection and document manager
 const connection = createConnection(ProposedFeatures.all);
 const documents = new TextDocuments(TextDocument);
-
-// Load documentation data
-loadDocumentation();
 
 // Listen for document changes
 documents.listen(connection);
