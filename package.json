@@ -2,7 +2,7 @@
   "name": "slim-vscode-tools",
   "displayName": "slim-tools",
   "description": "language extension for the SLiM simulation package",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "icon": "slim_icon.png",
   "publisher": "andrewkern",
   "repository": {
@@ -22,6 +22,7 @@
   ],
   "activationEvents": [
     "onLanguage:slim",
+    "onLanguage:eidos",
     "onCustomEditor:slimdoc"
   ],
   "contributes": {
@@ -37,11 +38,28 @@
         ],
         "firstLine": "^#!.*\\bslim\\b",
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "eidos",
+        "aliases": [
+          "Eidos",
+          "eidos"
+        ],
+        "extensions": [
+          ".eidos"
+        ],
+        "firstLine": "^#!.*\\beidos\\b",
+        "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
         "language": "slim",
+        "scopeName": "source.slim",
+        "path": "./syntaxes/slim.tmLanguage.json"
+      },
+      {
+        "language": "eidos",
         "scopeName": "source.slim",
         "path": "./syntaxes/slim.tmLanguage.json"
       }
@@ -85,6 +103,38 @@
           "name": "Documentation"
         }
       ]
+    },
+    "commands": [
+      {
+        "command": "slimTools.runSLiM",
+        "title": "Run SLiM/Eidos Script",
+        "category": "SLiM",
+        "icon": "$(play)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "slimTools.runSLiM",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorLangId == slim || editorLangId == eidos"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "slimTools.runSLiM",
+          "when": "editorLangId == slim || editorLangId == eidos",
+          "group": "navigation@1"
+        }
+      ],
+      "editor/title/run": [
+        {
+          "command": "slimTools.runSLiM",
+          "when": "editorLangId == slim || editorLangId == eidos",
+          "group": "navigation@1"
+        }
+      ]
     }
   },
   "scripts": {
@@ -118,6 +168,8 @@
     "tmp": "^0.2.3",
     "vscode-languageclient": "^8.1.0",
     "vscode-languageserver": "^9.0.1",
-    "vscode-languageserver-textdocument": "^1.0.12"
+    "vscode-languageserver-textdocument": "^1.0.12",
+    "@types/he": "^1.2.3",
+    "he": "^1.2.0"
   }
 }

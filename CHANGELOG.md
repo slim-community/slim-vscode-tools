@@ -83,3 +83,52 @@ Initial release of `slim-tools` with the following features:
 - - - `positions.ts` for tracking positions in the file
 - - `server/src/validation` for scripts used by the validation service to check for errors
 - - - `structure.ts` for validating the structure of the script (e.g. semicolon-related errors)
+
+## [0.0.10]
+
+### Major Features
+- **Eidos file support**: Full language server support for `.eidos` files with appropriate feature filtering
+  - Added language configuration for `.eidos` file extension in `package.json`
+  - Eidos files only receive Eidos-specific completions, hover info, and documentation
+- **Performance improvements**: Document caching system to reduce redundant parsing
+- **Enhanced type inference**: Comprehensive type resolution for variables, constants, and expressions
+
+### New Utilities
+- `file-type.ts`: Determines file type (`.eidos` vs `.slim`) and filters features accordingly
+- `logger.ts`: Connection-aware logging system with fallback to console logging
+- `document-cache.ts`: Version-aware caching system for parsed document state
+- `text-processing.ts`: HTML entity decoding (using `he` library - resolves issue [#6](https://github.com/slim-community/slim-vscode-tools/issues/6)), type name cleaning, and signature formatting
+- `markdown.ts`: Centralized markdown generation for hover tooltips and completion documentation
+- `type-manager.ts`: Type inference engine for expressions, variables, and SLiM-specific patterns (e.g., `p1`, `m1`)
+- `hover-resolvers.ts`: Modular hover resolution logic separated from provider code
+
+### Services
+- `completion-service.ts`: Refactored completion logic into dedicated service class
+  - Supports context-aware completions for methods, properties, functions, callbacks, and types
+  - Integrates with type inference for better suggestions
+- `documentation-service.ts`: Turned documentation retrieval and management into a service
+  - Loads operator documentation from `eidos_operators.json`
+  - Improved error handling and logging
+
+### Improvements to Existing Files
+
+#### `instance.ts`
+- Tracks pseudo-parameters (e.g., `mut`, `individual`, `subpop`) within callback scopes
+- Detects model type (WF vs nonWF) from `initializeSLiMModelType()`
+- Tracks defined constants, mutation types, genomic element types, interaction types, subpopulations, species, and script blocks
+- Properly handles multiple active documents without race conditions
+
+#### `handlers.ts`
+- Initializes `DocumentationService` and `CompletionService` instances
+- Creates `LanguageServerContext` object for passing shared state
+- Registers document cache cleanup on document close
+
+#### `hover.ts`
+- Refactored to use `hover-resolvers.ts` for cleaner separation of concerns
+
+#### `extension.ts`
+- Status bar now dynamically shows "Run Eidos" or "Run SLiM" based on active file
+
+### Test Files
+- Added `test.eidos`: Lotka-Volterra predator-prey dynamics simulator (pure Eidos implementation)
+- Added unit tests for language server providers in `server/src/test`

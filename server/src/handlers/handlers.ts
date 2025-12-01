@@ -6,16 +6,30 @@ import {
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { validateTextDocument } from '../services/validation-service';
-import { onHover } from '../providers/hover';
+import { DocumentationService } from '../services/documentation-service';
+import { CompletionService } from '../services/completion-service';
+import { LanguageServerContext } from '../config/types';
+import { registerHoverProvider } from '../providers/hover';
 import { onCompletion, onCompletionResolve } from '../providers/completion';
 import { onSignatureHelp } from '../providers/signature-help';
 import { onReferences } from '../providers/references';
 import { onDocumentSymbol } from '../providers/document-symbols';
+import { documentCache } from '../utils/document-cache';
 
 export function setupHandlers(
     connection: Connection,
     documents: TextDocuments<TextDocument>
 ): InitializeResult {
+    const documentationService = new DocumentationService();
+    const completionService = new CompletionService(documentationService);
+    
+    // Create language server context
+    const context: LanguageServerContext = {
+        connection,
+        documents,
+        documentationService,
+        completionService,
+    };
     // Initialize handler
     const initializeResult: InitializeResult = {
         capabilities: {
@@ -27,7 +41,6 @@ export function setupHandlers(
             hoverProvider: true,
             referencesProvider: true,
             documentSymbolProvider: true,
-            documentFormattingProvider: true,
             signatureHelpProvider: {
                 triggerCharacters: ['(', ',', ' '],
                 retriggerCharacters: [',', ')'],
@@ -35,35 +48,34 @@ export function setupHandlers(
         },
     };
 
-    // Document change handler
     documents.onDidChangeContent((change) => {
         validateTextDocument(change.document, connection);
     });
 
-    // Hover handler
-    connection.onHover((params) => {
-        const document = documents.get(params.textDocument.uri);
-        if (!document) return null;
-        return onHover(params, document);
+    // Document close handler - clear cache to free memory
+    documents.onDidClose((event) => {
+        documentCache.delete(event.document.uri);
     });
+
+    registerHoverProvider(context);
 
     // Completion handler
     connection.onCompletion((params) => {
         const document = documents.get(params.textDocument.uri);
         if (!document) return [];
-        return onCompletion(params, document);
+        return onCompletion(params, document, context);
     });
 
     // Completion resolve handler
     connection.onCompletionResolve((item) => {
-        return onCompletionResolve(item);
+        return onCompletionResolve(item, context);
     });
 
     // Signature help handler
     connection.onSignatureHelp((params) => {
         const document = documents.get(params.textDocument.uri);
         if (!document) return null;
-        return onSignatureHelp(params, document);
+        return onSignatureHelp(params, document, context);
     });
 
     // References handler
