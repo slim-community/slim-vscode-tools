@@ -39,13 +39,17 @@ export class CompletionService {
         const text = document.getText();
         
         // Track instance definitions for better type resolution
-        trackInstanceDefinitions(document);
+        const trackingState = trackInstanceDefinitions(document);
         
         // Determine file type for filtering
         const fileType = getFileType(document);
 
         const completions: CompletionItem[] = [];
-        const wordInfo = getAutocompleteContextAtPosition(text, position);
+        const wordInfo = getAutocompleteContextAtPosition(
+            text, 
+            position, 
+            trackingState.instanceDefinitions as Record<string, string>
+        );
 
         // Check if we're completing a method or property
         if (wordInfo && wordInfo.wordContext.isMethodOrProperty) {
@@ -230,11 +234,6 @@ export class CompletionService {
                 className,
                 methodName,
             },
-            command: {
-                title: 'Show Documentation',
-                command: 'slimTools.showFunctionDoc',
-                arguments: [`${className}.${methodName}`],
-            },
         };
     }
 
@@ -253,11 +252,6 @@ export class CompletionService {
                 className,
                 propertyName,
             },
-            command: {
-                title: 'Show Documentation',
-                command: 'slimTools.showPropertyDoc',
-                arguments: [`${className}.${propertyName}`],
-            },
         };
     }
 
@@ -275,11 +269,6 @@ export class CompletionService {
                 type: 'function',
                 functionName,
             },
-            command: {
-                title: 'Show Documentation',
-                command: 'slimTools.showFunctionDoc',
-                arguments: [functionName],
-            },
         };
     }
 
@@ -295,11 +284,6 @@ export class CompletionService {
             data: {
                 type: 'callback',
                 callbackName,
-            },
-            command: {
-                title: 'Show Documentation',
-                command: 'slimTools.showFunctionDoc',
-                arguments: [callbackName],
             },
         };
     }
@@ -317,11 +301,6 @@ export class CompletionService {
                 type: 'constructor',
                 className,
             },
-            command: {
-                title: 'Show Documentation',
-                command: 'slimTools.showConstructorDoc',
-                arguments: [className],
-            },
         };
     }
     
@@ -337,11 +316,6 @@ export class CompletionService {
             data: {
                 type: 'operator',
                 operatorName,
-            },
-            command: {
-                title: 'Show Documentation',
-                command: 'slimTools.showOperatorDoc',
-                arguments: [operatorName],
             },
         };
     }

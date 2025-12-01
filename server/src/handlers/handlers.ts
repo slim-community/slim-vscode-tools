@@ -41,7 +41,6 @@ export function setupHandlers(
             hoverProvider: true,
             referencesProvider: true,
             documentSymbolProvider: true,
-            documentFormattingProvider: true,
             signatureHelpProvider: {
                 triggerCharacters: ['(', ',', ' '],
                 retriggerCharacters: [',', ')'],

@@ -33,7 +33,12 @@ export function createMethodMarkdown(
     methodName: string,
     methodInfo: MethodInfo
 ): string {
-    return `**${className}.${methodName}** (method)\n\n\`\`\`slim\n${cleanSignature(methodInfo.signature)}\n\`\`\`\n\n${cleanDocumentationText(methodInfo.description)}`;
+    // Extract return type from signature, e.g., "(void)methodName()" -> "void"
+    const returnTypeMatch = methodInfo.signature.match(/^\(([^)]+)\)/);
+    const returnType = returnTypeMatch ? cleanTypeNames(returnTypeMatch[1]) : 'void';
+    const signatureWithoutReturnType = methodInfo.signature.replace(/^\([^)]+\)\s*/, '');
+    
+    return `**${className}.${methodName}** (method)\n\n**Return Type:** \`${returnType}\`\n\n\`\`\`slim\n${cleanSignature(signatureWithoutReturnType)}\n\`\`\`\n\n${cleanDocumentationText(methodInfo.description)}`;
 }
 
 export function createPropertyMarkdown(

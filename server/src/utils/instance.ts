@@ -6,9 +6,6 @@ import { TrackingState, CallbackState } from '../config/types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { documentCache } from './document-cache';
 
-// Global instance definitions accessible to other modules
-export let instanceDefinitions: Record<string, string> = {};
-
 export function trackInstanceDefinitions(
     document: TextDocument,
     state?: TrackingState
@@ -17,8 +14,6 @@ export function trackInstanceDefinitions(
     if (!state) {
         const cached = documentCache.get(document);
         if (cached) {
-            // Update global instanceDefinitions from cache
-            instanceDefinitions = cached.instanceDefinitions as Record<string, string>;
             return cached;
         }
     }
@@ -265,9 +260,6 @@ export function trackInstanceDefinitions(
             }
         }
     });
-
-    // Update global instanceDefinitions for use by other modules
-    instanceDefinitions = trackingState.instanceDefinitions as Record<string, string>;
 
     // Cache the result for future calls (only if not using provided state)
     if (!state) {

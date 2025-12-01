@@ -11,11 +11,6 @@ import {
 } from '../config/paths';
 import {
     TEXT_PROCESSING_PATTERNS,
-    FUNCTIONS_DATA,
-    CLASSES_DATA,
-    CALLBACKS_DATA,
-    TYPES_DATA,
-    OPERATORS_DATA,
 } from '../config/config';
 import {
     FunctionInfo,
@@ -84,7 +79,9 @@ export class DocumentationService {
             if (types) {
                 // Add source to each type (Eidos types are available in both modes)
                 for (const [typeName, typeInfo] of Object.entries(types)) {
-                    this.typesData[typeName] = { ...typeInfo, source: 'eidos' };
+                    if (typeInfo && typeof typeInfo === 'object') {
+                        this.typesData[typeName] = { ...typeInfo, source: 'eidos' };
+                    }
                 }
                 log(`Loaded Eidos types: ${Object.keys(this.typesData).length} types`);
             }
@@ -93,13 +90,6 @@ export class DocumentationService {
             log(`Loaded Eidos operators: ${Object.keys(this.operatorsData).length} operators`);
 
             this.classConstructors = this.extractClassConstructors(this.classesData);
-
-            // Keep global stores in sync for existing providers that still rely on them
-            Object.assign(FUNCTIONS_DATA, this.functionsData);
-            Object.assign(CLASSES_DATA, this.classesData);
-            Object.assign(CALLBACKS_DATA, this.callbacksData);
-            Object.assign(TYPES_DATA, this.typesData);
-            Object.assign(OPERATORS_DATA, this.operatorsData);
 
             log('Documentation loaded successfully');
         } catch (error) {
@@ -213,14 +203,36 @@ export class DocumentationService {
 
     private loadJsonFile<T>(filePath: string): T | null {
         if (!fs.existsSync(filePath)) {
+            log(`Warning: Documentation file not found: ${filePath}`);
             return null;
         }
 
         try {
             const content = fs.readFileSync(filePath, 'utf8');
-            return JSON.parse(content) as T;
+            
+            // Validate content is not empty
+            if (!content || content.trim().length === 0) {
+                log(`Warning: Documentation file is empty: ${filePath}`);
+                return null;
+            }
+            
+            const parsed = JSON.parse(content);
+            
+            // Validate that parsed content is an object
+            if (typeof parsed !== 'object' || parsed === null) {
+                log(`Warning: Documentation file does not contain valid JSON object: ${filePath}`);
+                return null;
+            }
+            
+            return parsed as T;
         } catch (error) {
-            logErrorWithStack(error, `Error loading ${filePath}`);
+            if (error instanceof SyntaxError) {
+                logErrorWithStack(error, `Invalid JSON syntax in ${filePath}`);
+            } else if ((error as NodeJS.ErrnoException).code === 'EACCES') {
+                logErrorWithStack(error, `Permission denied reading ${filePath}`);
+            } else {
+                logErrorWithStack(error, `Error loading ${filePath}`);
+            }
             return null;
         }
     }
@@ -237,7 +249,12 @@ export class DocumentationService {
         if (!data) return;
 
         for (const [category, items] of Object.entries(data)) {
+            if (!items || typeof items !== 'object') continue;
+            
             for (const [key, value] of Object.entries(items)) {
+                // Skip invalid entries silently
+                if (!value || !Array.isArray(value.signatures) || !value.signatures.length) continue;
+                
                 target[key] = this.transformFunctionData(key, value, category, source);
             }
         }
@@ -249,10 +266,11 @@ export class DocumentationService {
         target: Record<string, ClassInfo>
     ): void {
         const data = this.loadJsonFile<Record<string, ClassInfo>>(filePath);
-        if (data) {
-            for (const [className, classInfo] of Object.entries(data)) {
-                target[className] = { ...classInfo, source };
-            }
+        if (!data) return;
+
+        for (const [className, classInfo] of Object.entries(data)) {
+            if (!classInfo || typeof classInfo !== 'object') continue;
+            target[className] = { ...classInfo, source };
         }
     }
 
@@ -264,6 +282,7 @@ export class DocumentationService {
         if (!data) return;
 
         for (const [key, value] of Object.entries(data)) {
+            if (!value || !value.signature) continue;
             target[key] = this.transformCallbackData(key, value);
         }
     }
@@ -276,6 +295,8 @@ export class DocumentationService {
         if (!data) return;
 
         for (const [key, value] of Object.entries(data)) {
+            if (!value || typeof value !== 'object') continue;
+            
             const signature = value.signature || '';
             const extractedKeys = signature
                 .split(',')

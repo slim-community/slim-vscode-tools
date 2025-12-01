@@ -7,7 +7,6 @@ import {
     ExtensionContext,
     window,
     commands,
-    ViewColumn,
     StatusBarAlignment,
     TreeItem,
     ThemeIcon,
@@ -21,48 +20,15 @@ import {
 } from 'vscode-languageclient/node';
 
 import { DocTreeProvider } from './docTreeProvider';
-import { DocSection, ClassInfo } from './types';
-
-// Update paths for all documentation files
-const slimFunctionsPath = path.join(__dirname, '../../docs/slim_functions.json');
-const eidosFunctionsPath = path.join(__dirname, '../../docs/eidos_functions.json');
-const slimClassesPath = path.join(__dirname, '../../docs/slim_classes.json');
-const eidosClassesPath = path.join(__dirname, '../../docs/eidos_classes.json');
-
-// Update data stores
-let functionsData: { [key: string]: { signature: string; description: string } } = {};
-let classesData: { [key: string]: ClassInfo } = {};
-
-// Load all documentation files
-function loadDocumentation() {
-    try {
-        if (fs.existsSync(slimFunctionsPath)) {
-            const slimFunctions = JSON.parse(fs.readFileSync(slimFunctionsPath, 'utf8'));
-            functionsData = { ...functionsData, ...slimFunctions };
-        }
-        if (fs.existsSync(eidosFunctionsPath)) {
-            const eidosFunctions = JSON.parse(fs.readFileSync(eidosFunctionsPath, 'utf8'));
-            functionsData = { ...functionsData, ...eidosFunctions };
-        }
-        if (fs.existsSync(slimClassesPath)) {
-            const slimClasses = JSON.parse(fs.readFileSync(slimClassesPath, 'utf8'));
-            classesData = { ...classesData, ...slimClasses };
-        }
-        if (fs.existsSync(eidosClassesPath)) {
-            const eidosClasses = JSON.parse(fs.readFileSync(eidosClassesPath, 'utf8'));
-            classesData = { ...classesData, ...eidosClasses };
-        }
-        console.log('✅ Extension loaded documentation successfully');
-    } catch (error) {
-        console.error('❌ Error loading documentation:', error);
-    }
-}
+import { DocSection } from './types';
 
 let client: LanguageClient;
 
+// Constants for temp file management
+const MAX_TEMP_FILES = 5;
+const TEMP_FILE_CLEANUP_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
 export function activate(context: ExtensionContext) {
-    // Load documentation first
-    loadDocumentation();
 
     // The server is implemented in node
     const serverModule = context.asAbsolutePath(path.join('out', 'server', 'index.js'));
@@ -106,9 +72,14 @@ export function activate(context: ExtensionContext) {
     // Start the client
     client.start();
 
-    // Register a data provider for the slimCommandsView
+    // Register a data provider for the slimCommandsView with dynamic updates
     const slimCommandsProvider = new SlimCommandsProvider();
     window.registerTreeDataProvider('slimCommandsView', slimCommandsProvider);
+    
+    // Update sidebar view when active editor changes
+    window.onDidChangeActiveTextEditor(() => {
+        slimCommandsProvider.refresh();
+    });
 
     // Create Status Bar Button - dynamically updates based on active file
     const statusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 100);
@@ -155,9 +126,18 @@ export function activate(context: ExtensionContext) {
         const config = workspace.getConfiguration('slimTools');
         const interpreterPath = config.get<string>('slimInterpreterPath', 'slim');
 
-        // For Eidos files, we can use the 'eidos' command if available, otherwise 'slim' works too
-        // since SLiM includes the Eidos interpreter
-        const command = isEidosFile && interpreterPath === 'slim' ? 'eidos' : interpreterPath;
+        // If it's an Eidos file, try to use 'eidos' command:
+        let command = interpreterPath;
+        if (isEidosFile) {
+            if (interpreterPath === 'slim') {
+                command = 'eidos';
+            } else if (interpreterPath.endsWith('slim')) {
+                command = interpreterPath.slice(0, -4) + 'eidos';
+            } else if (interpreterPath.endsWith('slim.exe')) {
+                command = interpreterPath.slice(0, -8) + 'eidos.exe';
+            }
+            // Otherwise keep the configured path (user may have custom setup)
+        }
         const terminalName = isEidosFile ? 'Eidos Interpreter' : 'SLiM Simulation';
 
         // Run in a new terminal
@@ -170,6 +150,34 @@ export function activate(context: ExtensionContext) {
     const docTreeProvider = new DocTreeProvider(context);
     window.registerTreeDataProvider('docTreeView', docTreeProvider);
 
+    // Track temporary files for cleanup
+    interface TempFileEntry {
+        file: tmp.FileResult;
+        timer: NodeJS.Timeout;
+    }
+    const tempFiles: TempFileEntry[] = [];
+    
+    // Helper function to cleanup a temp file safely
+    const cleanupTempFile = (entry: TempFileEntry) => {
+        clearTimeout(entry.timer);
+        try {
+            entry.file.removeCallback();
+        } catch (error) {
+            // Log but don't throw - file may already be deleted
+            console.warn('Failed to cleanup temp file:', error);
+        }
+    };
+    
+    // Helper function to cleanup oldest temp files beyond limit
+    const cleanupExcessTempFiles = () => {
+        while (tempFiles.length > MAX_TEMP_FILES) {
+            const oldEntry = tempFiles.shift();
+            if (oldEntry) {
+                cleanupTempFile(oldEntry);
+            }
+        }
+    };
+    
     // Register command to show documentation sections
     const showDocCommand = commands.registerCommand(
         'slimTools.showDocSection',
@@ -194,41 +202,46 @@ export function activate(context: ExtensionContext) {
                 md += `**Description**\n\n${cleanedDesc}\n\n`;
             }
 
-            const tmpFile = tmp.fileSync({ postfix: '.md' });
-            fs.writeFileSync(tmpFile.name, md);
+            try {
+                const tmpFile = tmp.fileSync({ postfix: '.md', keep: false });
+                fs.writeFileSync(tmpFile.name, md);
 
-            const doc = await workspace.openTextDocument(tmpFile.name);
-            await commands.executeCommand('markdown.showPreviewToSide', doc.uri);
-        }
-    );
-
-    // Register command to show function documentation
-    const showFunctionDocCommand = commands.registerCommand(
-        'slimTools.showFunctionDoc',
-        (functionName: string) => {
-            const functionInfo = functionsData[functionName];
-            if (functionInfo) {
-                const panel = window.createWebviewPanel(
-                    'functionDoc',
-                    `Documentation: ${functionName}`,
-                    window.activeTextEditor?.viewColumn || ViewColumn.Active,
-                    {}
-                );
-
-                panel.webview.html = `
-                <h1>${functionName}</h1>
-                <pre>${functionInfo.signature}</pre>
-                <p>${functionInfo.description}</p>
-            `;
+                const doc = await workspace.openTextDocument(tmpFile.name);
+                await commands.executeCommand('markdown.showPreviewToSide', doc.uri);
+                
+                // Set up auto-cleanup timer for this file
+                const timer = setTimeout(() => {
+                    const index = tempFiles.findIndex(entry => entry.file === tmpFile);
+                    if (index !== -1) {
+                        const entry = tempFiles.splice(index, 1)[0];
+                        cleanupTempFile(entry);
+                    }
+                }, TEMP_FILE_CLEANUP_TIMEOUT_MS);
+                
+                tempFiles.push({ file: tmpFile, timer });
+                
+                // Cleanup oldest files if we exceed the limit
+                cleanupExcessTempFiles();
+            } catch (error) {
+                window.showErrorMessage(`Failed to create documentation preview: ${error}`);
+                console.error('Error creating temp file for documentation:', error);
             }
         }
     );
 
-    // Register everything in the extension context
+    // Cleanup temp files on deactivation
     context.subscriptions.push(
         runSlimCommand,
         showDocCommand,
-        showFunctionDocCommand
+        {
+            dispose: () => {
+                // Clean up all remaining temp files
+                tempFiles.forEach(entry => {
+                    cleanupTempFile(entry);
+                });
+                tempFiles.length = 0;
+            }
+        }
     );
 }
 
@@ -239,22 +252,60 @@ export function deactivate(): Thenable<void> | undefined {
     return client.stop();
 }
 
-// SlimCommandsProvider class
+// SlimCommandsProvider class - dynamically shows Run SLiM or Run Eidos based on active file
 class SlimCommandsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+    private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+
+    refresh(): void {
+        this._onDidChangeTreeData.fire();
+    }
+
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
         return element;
     }
 
     getChildren(element?: vscode.TreeItem): Thenable<vscode.TreeItem[]> {
         if (!element) {
-            const runSlimCommand = new TreeItem('Run SLiM');
-            runSlimCommand.command = {
+            const editor = window.activeTextEditor;
+            const isEidosFile = editor?.document.fileName.endsWith('.eidos');
+            const isSlimFile = editor?.document.fileName.endsWith('.slim');
+            
+            // If no relevant file is open, show both options
+            if (!isEidosFile && !isSlimFile) {
+                const runSlimItem = new TreeItem('Run SLiM');
+                runSlimItem.command = {
+                    command: 'slimTools.runSLiM',
+                    title: 'Run SLiM',
+                    tooltip: 'Run SLiM on the currently open file',
+                };
+                runSlimItem.iconPath = new ThemeIcon('play');
+
+                const runEidosItem = new TreeItem('Run Eidos');
+                runEidosItem.command = {
+                    command: 'slimTools.runSLiM',
+                    title: 'Run Eidos',
+                    tooltip: 'Run Eidos on the currently open file',
+                };
+                runEidosItem.iconPath = new ThemeIcon('play');
+
+                return Promise.resolve([runSlimItem, runEidosItem]);
+            }
+            
+            // Show appropriate command for current file
+            const commandLabel = isEidosFile ? 'Run Eidos' : 'Run SLiM';
+            const commandTooltip = isEidosFile 
+                ? 'Run Eidos on the currently open file'
+                : 'Run SLiM on the currently open file';
+            
+            const runCommand = new TreeItem(commandLabel);
+            runCommand.command = {
                 command: 'slimTools.runSLiM',
-                title: 'Run SLiM',
-                tooltip: 'Run SLiM on the currently open file',
+                title: commandLabel,
+                tooltip: commandTooltip,
             };
-            runSlimCommand.iconPath = new ThemeIcon('play');
-            return Promise.resolve([runSlimCommand]);
+            runCommand.iconPath = new ThemeIcon('play');
+            return Promise.resolve([runCommand]);
         }
         return Promise.resolve([]);
     }

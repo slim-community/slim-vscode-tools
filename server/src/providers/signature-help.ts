@@ -1,8 +1,24 @@
 import { SignatureHelp, SignatureHelpParams, MarkupKind } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { getWordAndContextAtPosition } from '../utils/positions';
 import { LanguageServerContext } from '../config/types';
 import { getFileType } from '../utils/file-type';
+
+function countCommasOutsideParens(text: string): number {
+    let commaCount = 0;
+    let parenDepth = 0;
+    
+    for (const char of text) {
+        if (char === '(') {
+            parenDepth++;
+        } else if (char === ')') {
+            parenDepth--;
+        } else if (char === ',' && parenDepth === 0) {
+            commaCount++;
+        }
+    }
+    
+    return commaCount;
+}
 
 export function onSignatureHelp(
     params: SignatureHelpParams,
@@ -16,10 +32,42 @@ export function onSignatureHelp(
     const fileType = getFileType(document);
     const availableFunctions = context.documentationService.getFunctions(fileType);
     
-    const word = getWordAndContextAtPosition(text, position);
-
-    if (word && availableFunctions[word.word]) {
-        const functionInfo = availableFunctions[word.word];
+    // Get the line up to cursor
+    const lines = text.split('\n');
+    if (position.line >= lines.length) return null;
+    
+    const line = lines[position.line];
+    const textBeforeCursor = line.substring(0, position.character);
+    
+    // Find the last unclosed opening paren by tracking paren depth
+    let openParenIndex = -1;
+    let depth = 0;
+    
+    for (let i = textBeforeCursor.length - 1; i >= 0; i--) {
+        const char = textBeforeCursor[i];
+        if (char === ')') {
+            depth++;
+        } else if (char === '(') {
+            if (depth === 0) {
+                openParenIndex = i;
+                break;
+            }
+            depth--;
+        }
+    }
+    
+    if (openParenIndex === -1) return null;
+    
+    // Find the function name before the opening paren
+    const textBeforeParen = textBeforeCursor.substring(0, openParenIndex);
+    const functionNameMatch = textBeforeParen.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*$/);
+    
+    if (!functionNameMatch) return null;
+    
+    const functionName = functionNameMatch[1];
+    const functionInfo = availableFunctions[functionName];
+    
+    if (functionInfo) {
         const signature = functionInfo.signature || '';
 
         if (!signature) {
@@ -28,7 +76,19 @@ export function onSignatureHelp(
 
         // Extract parameters from signature
         const paramList = signature.match(/\((.*?)\)/);
-        const parameters = paramList ? paramList[1].split(',').map((p) => p.trim()) : [];
+        const paramsText = paramList ? paramList[1].trim() : '';
+        const parameters = paramsText ? paramsText.split(',').map((p) => p.trim()) : [];
+
+        // Calculate active parameter by counting commas (accounting for nested parens)
+        const textInParens = textBeforeCursor.substring(openParenIndex + 1);
+        const commaCount = countCommasOutsideParens(textInParens);
+
+        // For variadic functions (like sum(...)) or functions with no explicit params,
+        // don't clamp the active parameter.
+        const isVariadic = paramsText === '...' || paramsText.includes('...');
+        const finalActiveParameter = isVariadic || commaCount >= parameters.length
+            ? commaCount
+            : Math.min(commaCount, Math.max(0, parameters.length - 1));
 
         return {
             signatures: [
@@ -42,7 +102,7 @@ export function onSignatureHelp(
                 },
             ],
             activeSignature: 0,
-            activeParameter: 0,
+            activeParameter: finalActiveParameter,
         };
     }
 

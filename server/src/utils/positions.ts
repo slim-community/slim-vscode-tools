@@ -1,5 +1,4 @@
 import { WordInfo } from '../config/types';
-import { instanceDefinitions } from './instance';
 import { resolveClassName } from './type-manager';
 import { TWO_CHAR_OPS, SINGLE_CHAR_OPS } from '../config/config';
 import { Position } from 'vscode-languageserver';
@@ -50,6 +49,7 @@ export function getOperatorAtPosition(text: string, position: Position): string 
 export function getWordAndContextAtPosition(
     text: string,
     position: Position,
+    instanceDefinitions: Record<string, string> = {}
 ): WordInfo | null {
     const lines = text.split('\n');
     if (position.line >= lines.length) {
@@ -121,6 +121,7 @@ export function getWordAndContextAtPosition(
 export function getAutocompleteContextAtPosition(
     text: string,
     position: Position,
+    instanceDefinitions: Record<string, string> = {}
 ): WordInfo | null {
     const lines = text.split('\n');
     if (position.line >= lines.length) {

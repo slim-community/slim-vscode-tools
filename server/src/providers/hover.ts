@@ -36,7 +36,11 @@ export function registerHoverProvider(context: LanguageServerContext): void {
             };
         }
 
-        const wordInfo = getWordAndContextAtPosition(text, position);
+        const wordInfo = getWordAndContextAtPosition(
+            text, 
+            position,
+            trackingState.instanceDefinitions as Record<string, string>
+        );
         if (!wordInfo) return null;
 
         return getHoverForWord(
@@ -46,7 +50,7 @@ export function registerHoverProvider(context: LanguageServerContext): void {
             classesData,
             callbacksData,
             typesData,
-            trackingState.instanceDefinitions
+            trackingState.instanceDefinitions as Record<string, string>
         );
     });
 }

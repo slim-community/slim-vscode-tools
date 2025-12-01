@@ -212,6 +212,7 @@ Initial release of `slim-tools` with the following features:
 - Tracks pseudo-parameters (e.g., `mut`, `individual`, `subpop`) within callback scopes
 - Detects model type (WF vs nonWF) from `initializeSLiMModelType()`
 - Tracks defined constants, mutation types, genomic element types, interaction types, subpopulations, species, and script blocks
+- Properly handles multiple active documents without race conditions
 
 ##### `handlers.ts`
 - Initializes `DocumentationService` and `CompletionService` instances
@@ -226,6 +227,7 @@ Initial release of `slim-tools` with the following features:
 
 #### Test Files
 - Added `test.eidos`: Lotka-Volterra predator-prey dynamics simulator (pure Eidos implementation)
+- Added unit tests for language server providers in `server/src/test`
 
 ## Development notes
 

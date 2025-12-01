@@ -103,6 +103,38 @@
           "name": "Documentation"
         }
       ]
+    },
+    "commands": [
+      {
+        "command": "slimTools.runSLiM",
+        "title": "Run SLiM/Eidos Script",
+        "category": "SLiM",
+        "icon": "$(play)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "slimTools.runSLiM",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorLangId == slim || editorLangId == eidos"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "slimTools.runSLiM",
+          "when": "editorLangId == slim || editorLangId == eidos",
+          "group": "navigation@1"
+        }
+      ],
+      "editor/title/run": [
+        {
+          "command": "slimTools.runSLiM",
+          "when": "editorLangId == slim || editorLangId == eidos",
+          "group": "navigation@1"
+        }
+      ]
     }
   },
   "scripts": {

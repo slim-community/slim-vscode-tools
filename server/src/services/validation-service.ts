@@ -2,6 +2,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, Connection } from 'vscode-languageserver/node';
 import { shouldHaveSemicolon } from '../validation/structure';
 import { getFileType } from '../utils/file-type';
+import { removeStringsAndComments } from '../utils/text-processing';
 
 export async function validateTextDocument(
     textDocument: TextDocument,
@@ -29,8 +30,10 @@ export async function validateTextDocument(
         const isSlimBlock = fileType === 'slim' && 
             (/^\d+\s+\w+\(\)/.test(trimmedLine) || /^s\d+\s+\d+\s+\w+\(\)/.test(trimmedLine));
 
-        const openBracesInLine = (line.match(/{/g) || []).length;
-        const closeBracesInLine = (line.match(/}/g) || []).length;
+        // Remove strings and comments before counting braces
+        const codeOnly = removeStringsAndComments(line);
+        const openBracesInLine = (codeOnly.match(/{/g) || []).length;
+        const closeBracesInLine = (codeOnly.match(/}/g) || []).length;
 
         braceCount += openBracesInLine - closeBracesInLine;
 

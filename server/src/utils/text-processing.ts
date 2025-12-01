@@ -76,3 +76,16 @@ export function cleanDocumentationText(text: string): string {
     // Clean up multiple spaces
     return cleaned.replace(/\s{2,}/g, ' ');
 }
+
+export function removeStringsAndComments(line: string): string {
+    const strings: string[] = [];
+    const codeWithPlaceholders = line.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, (match) => {
+        strings.push(match);
+        return `__STRING${strings.length - 1}__`;
+    });
+
+    return codeWithPlaceholders
+        .replace(/\/\/.*$/, '')
+        .replace(/\/\*.*?\*\//g, '')
+        .trim();
+}

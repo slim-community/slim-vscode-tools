@@ -1,14 +1,4 @@
-import { FunctionInfo, ClassInfo, CallbackInfo, TypeInfo, OperatorInfo, TickCycleInfo } from './types';
-
-// ============================================================================
-// Documentation data stores
-// ============================================================================
-
-export let FUNCTIONS_DATA: { [key: string]: FunctionInfo } = {};
-export let CLASSES_DATA: { [key: string]: ClassInfo } = {};
-export let CALLBACKS_DATA: { [key: string]: CallbackInfo } = {};
-export let TYPES_DATA: { [key: string]: TypeInfo } = {};
-export let OPERATORS_DATA: { [key: string]: OperatorInfo } = {};
+import { TickCycleInfo } from './types';
 
 // ============================================================================
 // Classes and types
