@@ -58,7 +58,13 @@ export function activate(context: ExtensionContext) {
         synchronize: {
             // Notify the server about file changes to '.slim/.eidos' files contained in the workspace
             fileEvents: workspace.createFileSystemWatcher('**/*.{slim,eidos}'),
+            // Sync configuration changes to the server
+            configurationSection: 'slimTools'
         },
+        initializationOptions: {
+            // Pass initial configuration to server
+            formatting: workspace.getConfiguration('slimTools.formatting')
+        }
     };
 
     // Create the language client and start the client.

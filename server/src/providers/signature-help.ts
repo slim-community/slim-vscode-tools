@@ -1,40 +1,31 @@
-import { SignatureHelp, SignatureHelpParams, MarkupKind } from 'vscode-languageserver/node';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { LanguageServerContext } from '../config/types';
+import { SignatureHelp, SignatureHelpParams, MarkupKind, ParameterInformation } from 'vscode-languageserver/node';
+import { LanguageServerContext, MethodInfo, ConstructorInfo, CallContext, UserFunctionInfo } from '../config/types';
 import { getFileType } from '../utils/file-type';
+import { countCommasOutsideParens } from '../utils/text-processing';
+import { trackInstanceDefinitions } from '../utils/instance';
+import { resolveExpressionType } from '../utils/type-manager';
+import { documentCache } from '../services/document-cache';
 
-function countCommasOutsideParens(text: string): number {
-    let commaCount = 0;
-    let parenDepth = 0;
-    
-    for (const char of text) {
-        if (char === '(') {
-            parenDepth++;
-        } else if (char === ')') {
-            parenDepth--;
-        } else if (char === ',' && parenDepth === 0) {
-            commaCount++;
-        }
-    }
-    
-    return commaCount;
-}
+// Register signature help provider
+export function registerSignatureHelpProvider(context: LanguageServerContext): void {
+    const { connection, documents } = context;
 
-export function onSignatureHelp(
-    params: SignatureHelpParams,
-    document: TextDocument,
-    context: LanguageServerContext
-): SignatureHelp | null {
-    const position = params.position;
-    const text = document.getText();
+    connection.onSignatureHelp((params: SignatureHelpParams): SignatureHelp | null => {
+        const document = documents.get(params.textDocument.uri);
+        if (!document) return null;
+
+        const position = params.position;
     
-    // Determine file type and get filtered data from service
-    const fileType = getFileType(document);
-    const availableFunctions = context.documentationService.getFunctions(fileType);
+        // Determine file type and get filtered data from service
+        const fileType = getFileType(document);
     
-    // Get the line up to cursor
-    const lines = text.split('\n');
-    if (position.line >= lines.length) return null;
+        // Use cached tracking state for type resolution
+        const trackingState = trackInstanceDefinitions(document);
+        const instanceDefinitions = trackingState.instanceDefinitions as Record<string, string>;
+    
+        // Get the line up to cursor (use cached lines)
+        const lines = documentCache.getOrCreateLines(document);
+        if (position.line >= lines.length) return null;
     
     const line = lines[position.line];
     const textBeforeCursor = line.substring(0, position.character);
@@ -58,54 +49,267 @@ export function onSignatureHelp(
     
     if (openParenIndex === -1) return null;
     
-    // Find the function name before the opening paren
-    const textBeforeParen = textBeforeCursor.substring(0, openParenIndex);
-    const functionNameMatch = textBeforeParen.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*$/);
+    // Parse the call context to determine what kind of signature help to provide
+    const callContext = parseCallContext(textBeforeCursor, openParenIndex, instanceDefinitions);
+    if (!callContext) return null;
     
-    if (!functionNameMatch) return null;
+    // Calculate active parameter by counting commas
+    const textInParens = textBeforeCursor.substring(openParenIndex + 1);
+    const commaCount = countCommasOutsideParens(textInParens);
     
-    const functionName = functionNameMatch[1];
-    const functionInfo = availableFunctions[functionName];
-    
-    if (functionInfo) {
-        const signature = functionInfo.signature || '';
-
-        if (!signature) {
-            return null;
+    // Get signature help based on call context
+    switch (callContext.kind) {
+        case 'function': {
+            // First check for user-defined functions
+            const userFuncHelp = getUserFunctionSignatureHelp(
+                callContext.name,
+                commaCount,
+                trackingState.userFunctions
+            );
+            if (userFuncHelp) return userFuncHelp;
+            
+            // Fall back to built-in functions
+            return getFunctionSignatureHelp(
+                callContext.name,
+                commaCount,
+                context.documentationService.getFunctions(fileType)
+            );
         }
+        
+        case 'method':
+            return getMethodSignatureHelp(
+                callContext.className!,
+                callContext.name,
+                commaCount,
+                context.documentationService.getClasses(fileType)
+            );
+        
+        case 'constructor':
+            return getConstructorSignatureHelp(
+                callContext.name,
+                commaCount,
+                context.documentationService.getClassConstructors(fileType)
+            );
+    }
+    });
+}
 
-        // Extract parameters from signature
-        const paramList = signature.match(/\((.*?)\)/);
-        const paramsText = paramList ? paramList[1].trim() : '';
-        const parameters = paramsText ? paramsText.split(',').map((p) => p.trim()) : [];
-
-        // Calculate active parameter by counting commas (accounting for nested parens)
-        const textInParens = textBeforeCursor.substring(openParenIndex + 1);
-        const commaCount = countCommasOutsideParens(textInParens);
-
-        // For variadic functions (like sum(...)) or functions with no explicit params,
-        // don't clamp the active parameter.
-        const isVariadic = paramsText === '...' || paramsText.includes('...');
-        const finalActiveParameter = isVariadic || commaCount >= parameters.length
-            ? commaCount
-            : Math.min(commaCount, Math.max(0, parameters.length - 1));
-
+function parseCallContext(
+    textBeforeParen: string,
+    openParenIndex: number,
+    instanceDefinitions: Record<string, string>
+): CallContext | null {
+    const beforeParen = textBeforeParen.substring(0, openParenIndex).trimEnd();
+    
+    // Check for method call on an expression
+    const methodMatch = beforeParen.match(/([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*$/);
+    
+    if (methodMatch) {
+        const fullExpression = methodMatch[1];
+        const methodName = methodMatch[2];
+        
+        // Resolve the type of the expression
+        const className = resolveExpressionType(fullExpression, instanceDefinitions);
+        
+        if (className) {
+            return {
+                kind: 'method',
+                name: methodName,
+                className,
+                openParenIndex
+            };
+        }
+    }
+    
+    // Check for constructor call
+    const constructorMatch = beforeParen.match(/([A-Z][a-zA-Z0-9_]*)\s*$/);
+    if (constructorMatch) {
+        const className = constructorMatch[1];
         return {
-            signatures: [
-                {
-                    label: signature,
-                    documentation: {
-                        kind: MarkupKind.Markdown,
-                        value: `${signature}\n\n${functionInfo.description}`,
-                    },
-                    parameters: parameters.map((param) => ({ label: param })),
-                },
-            ],
-            activeSignature: 0,
-            activeParameter: finalActiveParameter,
+            kind: 'constructor',
+            name: className,
+            openParenIndex
         };
     }
-
+    
+    // Check for global function call
+    const functionMatch = beforeParen.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*$/);
+    if (functionMatch) {
+        return {
+            kind: 'function',
+            name: functionMatch[1],
+            openParenIndex
+        };
+    }
+    
     return null;
 }
 
+function getUserFunctionSignatureHelp(
+    functionName: string,
+    commaCount: number,
+    userFunctions: Map<string, UserFunctionInfo>
+): SignatureHelp | null {
+    const funcInfo = userFunctions.get(functionName);
+    if (!funcInfo) return null;
+    
+    const signature = `${functionName}(${funcInfo.parameters})`;
+    
+    const { parameters, activeParameter } = parseSignatureParameters(signature, commaCount);
+    
+    const docComment = funcInfo.docComment || '';
+    const documentation = docComment
+        ? `**${functionName}** (user-defined function)\n\n**Return Type:** \`${funcInfo.returnType}\`\n\n${docComment}`
+        : `**${functionName}** (user-defined function)\n\n**Return Type:** \`${funcInfo.returnType}\``;
+    
+    return {
+        signatures: [{
+            label: signature,
+            documentation: {
+                kind: MarkupKind.Markdown,
+                value: documentation,
+            },
+            parameters: parameters,
+        }],
+        activeSignature: 0,
+        activeParameter: activeParameter,
+    };
+}
+
+function getFunctionSignatureHelp(
+    functionName: string,
+    commaCount: number,
+    functionsData: Record<string, any>
+): SignatureHelp | null {
+    const functionInfo = functionsData[functionName];
+    if (!functionInfo) return null;
+    
+    const signature = functionInfo.signature || functionInfo.signatures?.[0] || '';
+    if (!signature) return null;
+    
+    const { parameters, activeParameter } = parseSignatureParameters(signature, commaCount);
+    
+    return {
+        signatures: [{
+            label: signature,
+            documentation: {
+                kind: MarkupKind.Markdown,
+                value: `${signature}\n\n${functionInfo.description}`,
+            },
+            parameters: parameters,
+        }],
+        activeSignature: 0,
+        activeParameter: activeParameter,
+    };
+}
+
+function getMethodSignatureHelp(
+    className: string,
+    methodName: string,
+    commaCount: number,
+    classesData: Record<string, any>
+): SignatureHelp | null {
+    const classInfo = classesData[className];
+    if (!classInfo?.methods) return null;
+    
+    const methodInfo: MethodInfo = classInfo.methods[methodName];
+    if (!methodInfo?.signature) return null;
+    
+    const { parameters, activeParameter } = parseSignatureParameters(methodInfo.signature, commaCount);
+    
+    return {
+        signatures: [{
+            label: methodInfo.signature,
+            documentation: {
+                kind: MarkupKind.Markdown,
+                value: `**${className}.${methodName}**\n\n${methodInfo.signature}\n\n${methodInfo.description}`,
+            },
+            parameters: parameters,
+        }],
+        activeSignature: 0,
+        activeParameter: activeParameter,
+    };
+}
+
+function getConstructorSignatureHelp(
+    className: string,
+    commaCount: number,
+    constructorsData: Record<string, ConstructorInfo>
+): SignatureHelp | null {
+    const constructorInfo = constructorsData[className];
+    if (!constructorInfo?.signature) return null;
+    
+    const { parameters, activeParameter } = parseSignatureParameters(constructorInfo.signature, commaCount);
+    
+    return {
+        signatures: [{
+            label: constructorInfo.signature,
+            documentation: {
+                kind: MarkupKind.Markdown,
+                value: `**${className} Constructor**\n\n${constructorInfo.signature}\n\n${constructorInfo.description}`,
+            },
+            parameters: parameters,
+        }],
+        activeSignature: 0,
+        activeParameter: activeParameter,
+    };
+}
+
+// Helper function to parse signature parameters
+function parseSignatureParameters(
+    signature: string,
+    commaCount: number
+): { parameters: ParameterInformation[]; activeParameter: number } {
+    // Extract parameters from signature
+    const paramList = signature.match(/\((.*)\)/s);
+    const paramsText = paramList ? paramList[1].trim() : '';
+    
+    // Handle empty parameter list
+    if (!paramsText || paramsText === 'void') {
+        return { parameters: [], activeParameter: 0 };
+    }
+    
+    // Split parameters, accounting for nested brackets and parens
+    const params = splitParameters(paramsText);
+    
+    const parameters: ParameterInformation[] = params.map(param => ({ 
+        label: param.trim() 
+    }));
+    
+    // Check if variadic
+    const isVariadic = paramsText === '...' || paramsText.includes('...');
+    
+    // Calculate active parameter
+    const activeParameter = isVariadic || commaCount >= parameters.length
+        ? commaCount
+        : Math.min(commaCount, Math.max(0, parameters.length - 1));
+    
+    return { parameters, activeParameter };
+}
+
+// Helper function to split parameters into an array of parameter strings
+function splitParameters(paramsText: string): string[] {
+    const params: string[] = [];
+    let current = '';
+    let depth = 0;
+    let inBracket = 0;
+    
+    for (const char of paramsText) {
+        if (char === '(' || char === '<') depth++;
+        else if (char === ')' || char === '>') depth--;
+        else if (char === '[') inBracket++;
+        else if (char === ']') inBracket--;
+        else if (char === ',' && depth === 0 && inBracket === 0) {
+            params.push(current.trim());
+            current = '';
+            continue;
+        }
+        current += char;
+    }
+    
+    if (current.trim()) {
+        params.push(current.trim());
+    }
+    
+    return params;
+}

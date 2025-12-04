@@ -101,6 +101,9 @@ Also adds a command to run the SLiM script in Activity Bar.
 This extension contributes the following settings:
 
 * `slimTools.slimInterpreterPath`: Path to the SLiM interpreter (e.g., `/usr/local/bin/slim` or `C:\\Users\\YourName\\slim.exe`).
+* `slimTools.formatting.tabSize`: Number of spaces per indentation level (default: 4).
+* `slimTools.formatting.insertSpaces`: Use spaces instead of tabs (default: true).
+* `slimTools.formatting.maxConsecutiveBlankLines`: Maximum consecutive blank lines (default: 2).
 
 ## Diagnostic Features
 
@@ -228,6 +231,55 @@ Initial release of `slim-tools` with the following features:
 #### Test Files
 - Added `test.eidos`: Lotka-Volterra predator-prey dynamics simulator (pure Eidos implementation)
 - Added unit tests for language server providers in `server/src/test`
+
+### [0.0.11]
+
+#### Major Features
+- **Go to Definition** (`definitions.ts`): Jump to the definition of variables, functions, constants, and SLiM objects
+- **Code Actions (Quick Fixes)** (`code-actions.ts`): Automated fixes for common syntax errors (missing semicolons, unmatched braces, etc.)
+- **Formatting** (`formatting.ts`): Configurable document formatting for full documents or ranges
+- **Find All References** (`references.ts`): Locate all usages of variables, functions, and SLiM objects
+- **Folding Ranges** (`folding-range.ts`): Collapse code blocks for better navigation
+- **Inlay Hints** (`inlay-hints.ts`): Inline type and parameter information
+
+#### New Utilities
+- `diagnostics.ts`: Centralized diagnostic creation utilities for consistent error reporting
+- `validation-utils.ts`: Helper utilities for getting character ranges for validation diagnostics
+- `eidos-function-parser.ts`: Parser for Eidos function signatures and parameter extraction
+- `vector-detector.ts`: Singleton/vector type discrimination and conversion utilities for Eidos type system
+- `ranges.ts`: Block range finding and comment range detection utilities for folding and navigation
+
+#### Refactored Validation System
+
+##### `validation-service.ts`
+- Integrated with document caching system for significant performance improvement in large files
+- Modular validation pipeline with clear extension points
+- Prepared infrastructure for future validation modules
+
+##### `structure.ts`
+- Complete rewrite with enhanced error detection
+  - Multi-line string tracking with proper escape sequence handling
+  - Improved brace, bracket, and parenthesis balance tracking
+  - Better detection of unclosed constructs
+
+#### Enhanced Caching System (`document-cache.ts`)
+- Implemented configurable LRU (Least Recently Used) eviction policy
+- Separate caching for tracking state and diagnostics
+
+#### Test Coverage
+- **New test suites**
+  - Comprehensive unit test suites for all providers
+  - Existing unit tests expanded for new functionality and edge cases
+  - New integration tests for testing array access, instance tracking, and tracking order
+  
+#### Minor Updates & Bug Fixes
+- Improved `signature-help.ts` and `completion-service.ts` with new features/utils
+- Fixed user-defined function handling to use the correct Eidos syntax
+- Added user-defined functions to tracking for hover info, completion, and signature help
+- Improve hover info behavior for class members
+- Fixed subpopulation definition patterns to handle multispecies models
+- Improved multi-line string handling in validation
+- Removed `--passWithNoTests` flag from language server test script (tests now required to pass)
 
 ## Development notes
 

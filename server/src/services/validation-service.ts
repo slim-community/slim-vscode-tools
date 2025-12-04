@@ -1,91 +1,50 @@
+import { Diagnostic } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Diagnostic, DiagnosticSeverity, Connection } from 'vscode-languageserver/node';
-import { shouldHaveSemicolon } from '../validation/structure';
+import { DocumentationService } from './documentation-service';
+import { validateStructure } from '../validation/structure';
 import { getFileType } from '../utils/file-type';
-import { removeStringsAndComments } from '../utils/text-processing';
+import { documentCache } from './document-cache';
 
-export async function validateTextDocument(
-    textDocument: TextDocument,
-    connection: Connection
-): Promise<void> {
-    const text = textDocument.getText();
-    const diagnostics: Diagnostic[] = [];
-    const lines = text.split('\n');
-    
-    // Determine file type for appropriate validation
-    const fileType = getFileType(textDocument);
-
-    let braceCount = 0;
-    let lastOpenBraceLine = -1;
-    let parenBalance = 0;
-
-    lines.forEach((line, lineIndex) => {
-        const trimmedLine = line.trim();
-
-        if (!trimmedLine || trimmedLine.startsWith('//')) {
-            return;
-        }
-
-        // SLiM-specific callback/event block pattern (not applicable to Eidos)
-        const isSlimBlock = fileType === 'slim' && 
-            (/^\d+\s+\w+\(\)/.test(trimmedLine) || /^s\d+\s+\d+\s+\w+\(\)/.test(trimmedLine));
-
-        // Remove strings and comments before counting braces
-        const codeOnly = removeStringsAndComments(line);
-        const openBracesInLine = (codeOnly.match(/{/g) || []).length;
-        const closeBracesInLine = (codeOnly.match(/}/g) || []).length;
-
-        braceCount += openBracesInLine - closeBracesInLine;
-
-        if (openBracesInLine > 0) {
-            lastOpenBraceLine = lineIndex;
-        }
-
-        if (braceCount < 0 && !isSlimBlock) {
-            diagnostics.push({
-                severity: DiagnosticSeverity.Error,
-                range: {
-                    start: { line: lineIndex, character: 0 },
-                    end: { line: lineIndex, character: line.length },
-                },
-                message: 'Unexpected closing brace',
-                source: 'slim-tools',
-            });
-        }
-
-        const result = shouldHaveSemicolon(trimmedLine, parenBalance);
-        parenBalance = result.parenBalance;
-
-        if (result.shouldMark) {
-            diagnostics.push({
-                severity: DiagnosticSeverity.Warning,
-                range: {
-                    start: { line: lineIndex, character: 0 },
-                    end: { line: lineIndex, character: line.length },
-                },
-                message: 'Statement might be missing a semicolon',
-                source: 'slim-tools',
-            });
-        }
-    });
-
-    if (braceCount > 0) {
-        const lastLine = lines[lines.length - 1].trim();
-        const isCompleteBlock = lastLine === '}';
-
-        if (!isCompleteBlock) {
-            diagnostics.push({
-                severity: DiagnosticSeverity.Error,
-                range: {
-                    start: { line: lastOpenBraceLine, character: 0 },
-                    end: { line: lastOpenBraceLine, character: lines[lastOpenBraceLine].length },
-                },
-                message: 'Unclosed brace(s)',
-                source: 'slim-tools',
-            });
-        }
+export class ValidationService {
+    constructor(private documentationService: DocumentationService) {
+        // documentationService will be used when additional validation features are integrated
     }
 
-    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-}
+    // Gets the documentation service
+    public getDocumentationService(): DocumentationService {
+        return this.documentationService;
+    }
 
+    public async validate(textDocument: TextDocument): Promise<Diagnostic[]> {
+        // Check cache first - avoid re-validating unchanged documents
+        const cached = documentCache.getDiagnostics(textDocument);
+        if (cached) {
+            return cached;
+        }
+
+        const lines = documentCache.getOrCreateLines(textDocument);
+        const diagnostics: Diagnostic[] = [];
+
+        // Determine file type for appropriate validation
+        const fileType = getFileType(textDocument);
+
+        // Run structure validation (stateless - safe for concurrent calls)
+        const structureDiagnostics = validateStructure(lines, fileType);
+        diagnostics.push(...structureDiagnostics);
+
+        // Future validation modules will be called here following this pattern:
+        // e.g. for method/property call validation,
+        //
+        //    const methodPropertyDiagnostics = validateMethodOrPropertyCall(
+        //        lines,
+        //        trackingState,
+        //        this.documentationService.getClasses(fileType)
+        //    );
+        //    diagnostics.push(...methodPropertyDiagnostics);
+
+        // Cache the results using the unified document cache
+        documentCache.setDiagnostics(textDocument, diagnostics);
+
+        return diagnostics;
+    }
+}
