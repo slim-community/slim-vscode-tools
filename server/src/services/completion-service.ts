@@ -7,7 +7,6 @@ import {
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentationService } from './documentation-service';
-import { getAutocompleteContextAtPosition } from '../utils/positions';
 import { trackInstanceDefinitions } from '../utils/instance';
 import {
     createFunctionMarkdown,
@@ -16,6 +15,7 @@ import {
     createCallbackMarkdown,
     createConstructorMarkdown,
     createOperatorMarkdown,
+    createUserFunctionMarkdown,
 } from '../utils/markdown';
 import {
     FunctionInfo,
@@ -25,9 +25,14 @@ import {
     OperatorInfo,
     ConstructorInfo,
     LanguageMode,
+    TrackingState,
+    WordInfo,
+    UserFunctionInfo,
 } from '../config/types';
 import { cleanSignature, cleanTypeNames } from '../utils/text-processing';
 import { getFileType } from '../utils/file-type';
+import { resolveExpressionType } from '../utils/type-manager';
+import { documentCache } from './document-cache';
 
 export class CompletionService {
     constructor(private documentationService: DocumentationService) {}
@@ -36,31 +41,33 @@ export class CompletionService {
         document: TextDocument,
         position: Position
     ): CompletionItem[] | CompletionList | null {
-        const text = document.getText();
+        const lines = documentCache.getOrCreateLines(document);
         
         // Track instance definitions for better type resolution
         const trackingState = trackInstanceDefinitions(document);
+        const instanceDefinitions = trackingState.instanceDefinitions as Record<string, string>;
         
         // Determine file type for filtering
         const fileType = getFileType(document);
 
         const completions: CompletionItem[] = [];
-        const wordInfo = getAutocompleteContextAtPosition(
-            text, 
-            position, 
-            trackingState.instanceDefinitions as Record<string, string>
-        );
+        
+        // Get context at cursor position
+        const context = getCompletionContext(lines, position, instanceDefinitions);
 
-        // Check if we're completing a method or property
-        if (wordInfo && wordInfo.wordContext.isMethodOrProperty) {
+        if (context.wordContext.isMethodOrProperty && context.wordContext.className) {
+            // Method/property completion on a type
             this.addMethodAndPropertyCompletions(
-                wordInfo.wordContext.className,
+                context.wordContext.className,
                 completions,
                 fileType
             );
         } else {
-            // Add global completions (functions, constructors, callbacks, operators)
+            // Global completions
             this.addGlobalCompletions(completions, fileType);
+            
+            // Add user-defined symbols from tracking state
+            this.addUserDefinedCompletions(completions, trackingState);
         }
 
         return completions;
@@ -153,13 +160,63 @@ export class CompletionService {
                 }
                 break;
             }
+            case 'userVariable': {
+                item.documentation = {
+                    kind: MarkupKind.Markdown,
+                    value: `**${data.varName}**\n\nUser-defined variable of type: \`${data.varType}\``,
+                };
+                break;
+            }
+            case 'userConstant': {
+                item.documentation = {
+                    kind: MarkupKind.Markdown,
+                    value: `**${data.constName}**\n\nUser-defined constant${data.constType ? ` of type: \`${data.constType}\`` : ''}`,
+                };
+                break;
+            }
+            case 'subpopulation': {
+                item.documentation = {
+                    kind: MarkupKind.Markdown,
+                    value: `**${data.subpopName}**\n\nSubpopulation defined in this simulation`,
+                };
+                break;
+            }
+            case 'mutationType': {
+                item.documentation = {
+                    kind: MarkupKind.Markdown,
+                    value: `**${data.mutTypeName}**\n\nMutation type defined in this simulation`,
+                };
+                break;
+            }
+            case 'genomicElementType': {
+                item.documentation = {
+                    kind: MarkupKind.Markdown,
+                    value: `**${data.getTypeName}**\n\nGenomic element type defined in this simulation`,
+                };
+                break;
+            }
+            case 'interactionType': {
+                item.documentation = {
+                    kind: MarkupKind.Markdown,
+                    value: `**${data.intTypeName}**\n\nInteraction type defined in this simulation`,
+                };
+                break;
+            }
+            case 'userFunction': {
+                const funcInfo = data.funcInfo as UserFunctionInfo;
+                item.documentation = {
+                    kind: MarkupKind.Markdown,
+                    value: createUserFunctionMarkdown(funcInfo),
+                };
+                break;
+            }
         }
 
         return item;
     }
 
     private addMethodAndPropertyCompletions(
-        className: string | undefined,
+        className: string,
         completions: CompletionItem[],
         fileType: LanguageMode
     ): void {
@@ -219,6 +276,114 @@ export class CompletionService {
         }
     }
 
+    private addUserDefinedCompletions(
+        completions: CompletionItem[],
+        trackingState: TrackingState
+    ): void {
+        // Add user-defined constants
+        for (const constName of trackingState.definedConstants) {
+            const constType = trackingState.instanceDefinitions[constName];
+            completions.push({
+                label: constName,
+                kind: CompletionItemKind.Constant,
+                detail: constType ? `Constant: ${constType}` : 'User-defined constant',
+                sortText: `0_${constName}`, // Sort user symbols first
+                data: {
+                    type: 'userConstant',
+                    constName,
+                    constType,
+                },
+            });
+        }
+
+        // Add subpopulations
+        for (const subpopName of trackingState.definedSubpopulations) {
+            completions.push({
+                label: subpopName,
+                kind: CompletionItemKind.Variable,
+                detail: 'Subpopulation',
+                sortText: `0_${subpopName}`,
+                data: {
+                    type: 'subpopulation',
+                    subpopName,
+                },
+            });
+        }
+
+        // Add mutation types
+        for (const mutTypeName of trackingState.definedMutationTypes) {
+            completions.push({
+                label: mutTypeName,
+                kind: CompletionItemKind.Variable,
+                detail: 'MutationType',
+                sortText: `0_${mutTypeName}`,
+                data: {
+                    type: 'mutationType',
+                    mutTypeName,
+                },
+            });
+        }
+
+        // Add genomic element types
+        for (const getTypeName of trackingState.definedGenomicElementTypes) {
+            completions.push({
+                label: getTypeName,
+                kind: CompletionItemKind.Variable,
+                detail: 'GenomicElementType',
+                sortText: `0_${getTypeName}`,
+                data: {
+                    type: 'genomicElementType',
+                    getTypeName,
+                },
+            });
+        }
+
+        // Add interaction types
+        for (const intTypeName of trackingState.definedInteractionTypes) {
+            completions.push({
+                label: intTypeName,
+                kind: CompletionItemKind.Variable,
+                detail: 'InteractionType',
+                sortText: `0_${intTypeName}`,
+                data: {
+                    type: 'interactionType',
+                    intTypeName,
+                },
+            });
+        }
+
+        // Add user-defined functions
+        for (const [funcName, funcInfo] of trackingState.userFunctions) {
+            completions.push(this.createUserFunctionCompletion(funcName, funcInfo));
+        }
+
+        // Add user-defined variables
+        const builtIns = new Set(['sim', 'community', 'species']);
+        const alreadyAdded = new Set([
+            ...trackingState.definedConstants,
+            ...trackingState.definedSubpopulations,
+            ...trackingState.definedMutationTypes,
+            ...trackingState.definedGenomicElementTypes,
+            ...trackingState.definedInteractionTypes,
+        ]);
+
+        for (const [varName, varType] of Object.entries(trackingState.instanceDefinitions)) {
+            if (builtIns.has(varName) || alreadyAdded.has(varName)) continue;
+            
+            completions.push({
+                label: varName,
+                kind: CompletionItemKind.Variable,
+                detail: `Variable: ${varType}`,
+                sortText: `1_${varName}`, 
+                data: {
+                    type: 'userVariable',
+                    varName,
+                    varType,
+                },
+            });
+        }
+    }
+
     private createMethodCompletion(
         className: string,
         methodName: string,
@@ -265,6 +430,7 @@ export class CompletionService {
             label: functionName,
             kind: CompletionItemKind.Function,
             detail: cleanedSignature,
+            sortText: `2_${functionName}`,
             data: {
                 type: 'function',
                 functionName,
@@ -281,6 +447,7 @@ export class CompletionService {
             label: callbackName,
             kind: CompletionItemKind.Function,
             detail: cleanedSignature,
+            sortText: `2_${callbackName}`,
             data: {
                 type: 'callback',
                 callbackName,
@@ -297,6 +464,7 @@ export class CompletionService {
             label: className,
             kind: CompletionItemKind.Class,
             detail: cleanedSignature,
+            sortText: `2_${className}`,
             data: {
                 type: 'constructor',
                 className,
@@ -313,11 +481,83 @@ export class CompletionService {
             label: operatorName,
             kind: CompletionItemKind.Operator,
             detail: cleanedSignature,
+            sortText: `3_${operatorName}`, 
             data: {
                 type: 'operator',
                 operatorName,
             },
         };
     }
+
+    private createUserFunctionCompletion(
+        funcName: string,
+        funcInfo: UserFunctionInfo
+    ): CompletionItem {
+        const signature = `(${funcInfo.returnType})${funcName}(${funcInfo.parameters})`;
+        return {
+            label: funcName,
+            kind: CompletionItemKind.Function,
+            detail: signature,
+            sortText: `0_${funcName}`, // Sort user functions first
+            data: {
+                type: 'userFunction',
+                funcName,
+                funcInfo,
+            },
+        };
+    }
 }
 
+function getCompletionContext(
+    lines: string[],
+    position: Position,
+    instanceDefinitions: Record<string, string>
+): WordInfo {
+    if (position.line >= lines.length) {
+        return { word: '', wordContext: { isMethodOrProperty: false } };
+    }
+
+    const line = lines[position.line];
+    const lineUptoCursor = line.slice(0, position.character);
+
+    // Check for chained property access
+    const chainMatch = lineUptoCursor.match(/([a-zA-Z_][a-zA-Z0-9_.\[\]()]*)\s*\.\s*$/);
+    
+    if (chainMatch) {
+        const expression = chainMatch[1];
+        const className = resolveExpressionType(expression, instanceDefinitions);
+        
+        if (className) {
+            return {
+                word: '',
+                wordContext: {
+                    isMethodOrProperty: true,
+                    className,
+                    instanceName: expression,
+                },
+            };
+        }
+    }
+
+    // Check for partial method/property after dot: "expr.partial"
+    const partialChainMatch = lineUptoCursor.match(/([a-zA-Z_][a-zA-Z0-9_.\[\]()]*)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)$/);
+    
+    if (partialChainMatch) {
+        const expression = partialChainMatch[1];
+        const partial = partialChainMatch[2];
+        const className = resolveExpressionType(expression, instanceDefinitions);
+        
+        if (className) {
+            return {
+                word: partial,
+                wordContext: {
+                    isMethodOrProperty: true,
+                    className,
+                    instanceName: expression,
+                },
+            };
+        }
+    }
+
+    return { word: '', wordContext: { isMethodOrProperty: false } };
+}

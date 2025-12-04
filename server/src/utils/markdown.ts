@@ -9,6 +9,7 @@ import {
     OperatorInfo,
     ConstructorInfo,
     LanguageMode,
+    UserFunctionInfo,
 } from '../config/types';
 
 function normalizeTickCycleKey(signature: string, callbackName: string): string {
@@ -47,6 +48,15 @@ export function createPropertyMarkdown(
     propertyInfo: PropertyInfo
 ): string {
     return `**${className}.${propertyName}** (property)\n\n**Type:** \`${cleanTypeNames(propertyInfo.type)}\`\n\n${cleanDocumentationText(propertyInfo.description)}`;
+}
+
+export function createPropertySourceMarkdown(
+    variableName: string,
+    className: string,
+    propertyName: string,
+    propertyInfo: PropertyInfo
+): string {
+    return `**${variableName}** ← \`${className}.${propertyName}\`\n\n**Type:** \`${cleanTypeNames(propertyInfo.type)}\`\n\n${cleanDocumentationText(propertyInfo.description)}`;
 }
 
 export function createFunctionMarkdown(
@@ -93,4 +103,19 @@ export function createConstructorMarkdown(
     constructorInfo: ConstructorInfo
 ): string {
     return `**${className}** (constructor)\n\n\`\`\`slim\n${cleanSignature(constructorInfo.signature)}\n\`\`\`\n\n${cleanDocumentationText(constructorInfo.description)}`;
+}
+
+export function createUserFunctionMarkdown(funcInfo: UserFunctionInfo): string {
+    const returnType = cleanTypeNames(funcInfo.returnType);
+    const signature = `${funcInfo.name}(${funcInfo.parameters})`;
+    
+    let markdown = `**${funcInfo.name}** (user-defined function)\n\n`;
+    markdown += `**Return Type:** \`${returnType}\`\n\n`;
+    markdown += `\`\`\`slim\n${signature}\n\`\`\``;
+    
+    if (funcInfo.docComment) {
+        markdown += `\n\n${funcInfo.docComment}`;
+    }
+    
+    return markdown;
 }

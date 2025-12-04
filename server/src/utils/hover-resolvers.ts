@@ -1,5 +1,5 @@
 import { Hover } from 'vscode-languageserver';
-import { WordContext, FunctionInfo, ClassInfo, CallbackInfo, TypeInfo } from '../config/types';
+import { WordContext, FunctionInfo, ClassInfo, CallbackInfo, TypeInfo, UserFunctionInfo, PropertySourceInfo } from '../config/types';
 import { CLASS_NAMES } from '../config/config';
 import { resolveClassName } from './type-manager';
 import {
@@ -10,6 +10,8 @@ import {
     createTypeMarkdown,
     createInstanceMarkdown,
     createEidosEventMarkdown,
+    createUserFunctionMarkdown,
+    createPropertySourceMarkdown,
 } from './markdown';
 import { EIDOS_EVENT_NAMES } from '../config/config';
 
@@ -81,17 +83,6 @@ function getLogFileMemberHover(word: string, classesData: Record<string, ClassIn
     return null;
 }
 
-function getAnyClassMemberHover(
-    word: string,
-    classesData: Record<string, ClassInfo>
-): Hover | null {
-    for (const className of Object.keys(classesData)) {
-        const hover = getClassMemberHover(word, className, classesData);
-        if (hover) return hover;
-    }
-    return null;
-}
-
 function getCallbackHover(word: string, callbacksData: Record<string, CallbackInfo>): Hover | null {
     if (EIDOS_EVENT_NAMES.includes(word) && callbacksData['Eidos events']) {
         return createHoverResponse(createEidosEventMarkdown(word, callbacksData['Eidos events']));
@@ -118,7 +109,9 @@ export function getHoverForWord(
     classesData: Record<string, ClassInfo>,
     callbacksData: Record<string, CallbackInfo>,
     typesData: Record<string, TypeInfo>,
-    instanceDefinitions: Record<string, string>
+    instanceDefinitions: Record<string, string>,
+    userFunctions?: Map<string, UserFunctionInfo>,
+    propertyAssignments?: Map<string, PropertySourceInfo>
 ): Hover | null {
     if (context.instanceClass) {
         return createHoverResponse(createInstanceMarkdown(word, context.instanceClass));
@@ -136,15 +129,32 @@ export function getHoverForWord(
         if (hover) return hover;
     }
 
-    if (!context.isMethodOrProperty) {
-        const hover = getAnyClassMemberHover(word, classesData);
-        if (hover) return hover;
+    // Check if this variable was assigned from a class property (e.g., age_var = Individual.age)
+    if (propertyAssignments?.has(word)) {
+        const source = propertyAssignments.get(word)!;
+        const classInfo = classesData[source.className];
+        if (classInfo?.properties?.[source.propertyName]) {
+            return createHoverResponse(
+                createPropertySourceMarkdown(
+                    word,
+                    source.className,
+                    source.propertyName,
+                    classInfo.properties[source.propertyName]
+                )
+            );
+        }
     }
 
     const functionInfo = functionsData[word];
     if (functionInfo && typeof functionInfo === 'object' && 'signature' in functionInfo) {
         const source = functionInfo.source || undefined;
         return createHoverResponse(createFunctionMarkdown(word, functionInfo, source));
+    }
+
+    // Check for user-defined functions
+    if (userFunctions?.has(word)) {
+        const userFuncInfo = userFunctions.get(word)!;
+        return createHoverResponse(createUserFunctionMarkdown(userFuncInfo));
     }
 
     const callbackHover = getCallbackHover(word, callbacksData);

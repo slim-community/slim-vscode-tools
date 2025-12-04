@@ -1,25 +1,33 @@
 import { CALLBACK_PSEUDO_PARAMETERS } from '../config/config';
-import { inferTypeFromExpression } from './type-manager';
-import { DEFINITION_PATTERNS, CALLBACK_REGISTRATION_PATTERNS, COMPILED_CALLBACK_PATTERNS } from '../config/config';
+import { inferTypeFromExpression, resolveClassName } from './type-manager';
+import { DEFINITION_PATTERNS, CALLBACK_REGISTRATION_PATTERNS, COMPILED_CALLBACK_PATTERNS, EIDOS_FUNCTION_REGEX } from '../config/config';
 import { CLASS_NAMES } from '../config/config';
-import { TrackingState, CallbackState } from '../config/types';
+import { TrackingState, CallbackState, UserFunctionInfo, PropertySourceInfo } from '../config/types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { documentCache } from './document-cache';
+import { documentCache } from '../services/document-cache';
+import { extractDocComment } from './text-processing';
+
+// Pattern to match property access: ClassName.property or instance.property
+const PROPERTY_ACCESS_PATTERN = /^([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)$/;
 
 export function trackInstanceDefinitions(
     document: TextDocument,
     state?: TrackingState
 ): TrackingState {
-    // Check cache first for massive performance improvement
     if (!state) {
-        const cached = documentCache.get(document);
+        const cached = documentCache.getTrackingState(document);
         if (cached) {
             return cached;
         }
     }
-    // Create fresh tracking state for this analysis, or use provided state
-    const trackingState = state || {
-        instanceDefinitions: {},
+
+    const trackingState: TrackingState = state || {
+        instanceDefinitions: {
+            sim: CLASS_NAMES.SPECIES,
+            community: CLASS_NAMES.COMMUNITY,
+            species: CLASS_NAMES.SPECIES,
+        },
+        propertyAssignments: new Map<string, PropertySourceInfo>(),
         definedConstants: new Set<string>(),
         definedMutationTypes: new Set<string>(),
         definedGenomicElementTypes: new Set<string>(),
@@ -27,11 +35,13 @@ export function trackInstanceDefinitions(
         definedSubpopulations: new Set<string>(),
         definedScriptBlocks: new Set<string>(),
         definedSpecies: new Set<string>(),
+        userFunctions: new Map<string, UserFunctionInfo>(),
         modelType: null,
         callbackContextByLine: new Map(),
     };
-    const text = document.getText();
-    const lines = text.split('\n');
+    
+    // Use cached lines or create and cache them
+    const lines = documentCache.getOrCreateLines(document);
 
     let callbackState: CallbackState = {
         currentCallback: null,
@@ -47,7 +57,6 @@ export function trackInstanceDefinitions(
         let newBraceDepth = braceDepth;
         let newCallbackStartLine = callbackStartLine;
 
-        // Use pre-compiled patterns for better performance
         const callbackWithBraceMatch = line.match(COMPILED_CALLBACK_PATTERNS.CALLBACK_WITH_BRACE);
         const callbackWithoutBraceMatch = !callbackWithBraceMatch
             ? line.match(COMPILED_CALLBACK_PATTERNS.CALLBACK_WITHOUT_BRACE)
@@ -115,7 +124,6 @@ export function trackInstanceDefinitions(
 
         trackingState.callbackContextByLine.set(lineIndex, callbackState.currentCallback);
 
-        // Pre-filter: Only check for model type if line contains relevant keywords
         if (line.includes('initializeSLiMModelType')) {
             const modelTypeMatch = line.match(/initializeSLiMModelType\s*\(\s*["'](\w+)["']\s*\)/);
             if (modelTypeMatch) {
@@ -126,7 +134,6 @@ export function trackInstanceDefinitions(
             }
         }
 
-        // Pre-filter: Only check for constants if line contains relevant keywords
         const constantMatch = line.includes('defineConstant') ? line.match(DEFINITION_PATTERNS.DEFINE_CONSTANT) : null;
         if (constantMatch) {
             const constName = constantMatch[1];
@@ -138,7 +145,10 @@ export function trackInstanceDefinitions(
             if (constValueMatch) {
                 const valueExpr = constValueMatch[1].trim();
                 const cleanValue = valueExpr.replace(/\)\s*$/, '').trim();
-                const inferredType = inferTypeFromExpression(cleanValue);
+                const inferredType = inferTypeFromExpression(
+                    cleanValue,
+                    trackingState.instanceDefinitions as Record<string, string>
+                );
                 if (inferredType) {
                     (trackingState.instanceDefinitions as Record<string, string>)[constName] =
                         inferredType;
@@ -154,7 +164,10 @@ export function trackInstanceDefinitions(
 
                     if (nextLine.includes(')')) {
                         const valuePart = nextLine.split(')')[0].trim();
-                        const inferredType = inferTypeFromExpression(valuePart);
+                        const inferredType = inferTypeFromExpression(
+                            valuePart,
+                            trackingState.instanceDefinitions as Record<string, string>
+                        );
                         if (inferredType) {
                             (trackingState.instanceDefinitions as Record<string, string>)[
                                 constName
@@ -162,7 +175,10 @@ export function trackInstanceDefinitions(
                         }
                         break;
                     } else {
-                        const inferredType = inferTypeFromExpression(nextLine);
+                        const inferredType = inferTypeFromExpression(
+                            nextLine,
+                            trackingState.instanceDefinitions as Record<string, string>
+                        );
                         if (inferredType) {
                             (trackingState.instanceDefinitions as Record<string, string>)[
                                 constName
@@ -176,35 +192,30 @@ export function trackInstanceDefinitions(
 
         let typeMatch: RegExpMatchArray | null;
 
-        // Pre-filter: Only check mutation type if line contains relevant keywords
         if (line.includes('initializeMutationType')) {
             if ((typeMatch = line.match(DEFINITION_PATTERNS.MUTATION_TYPE)) !== null) {
                 trackingState.definedMutationTypes.add(typeMatch[1]);
             }
         }
 
-        // Pre-filter: Only check genomic element type if line contains relevant keywords
         if (line.includes('initializeGenomicElementType')) {
             if ((typeMatch = line.match(DEFINITION_PATTERNS.GENOMIC_ELEMENT_TYPE)) !== null) {
                 trackingState.definedGenomicElementTypes.add(typeMatch[1]);
             }
         }
 
-        // Pre-filter: Only check interaction type if line contains relevant keywords
         if (line.includes('initializeInteractionType')) {
             if ((typeMatch = line.match(DEFINITION_PATTERNS.INTERACTION_TYPE)) !== null) {
                 trackingState.definedInteractionTypes.add(typeMatch[1]);
             }
         }
 
-        // Pre-filter: Only check species if line contains relevant keywords
         if (line.includes('species') && line.includes('initialize')) {
             if ((typeMatch = line.match(DEFINITION_PATTERNS.SPECIES)) !== null) {
                 trackingState.definedSpecies.add(typeMatch[1]);
             }
         }
 
-        // Pre-filter: Only check subpopulation if line contains relevant keywords
         if (line.includes('addSubpop')) {
             if (
                 (typeMatch = line.match(DEFINITION_PATTERNS.SUBPOP)) !== null ||
@@ -215,9 +226,19 @@ export function trackInstanceDefinitions(
                 (trackingState.instanceDefinitions as Record<string, string>)[subpopName] =
                     CLASS_NAMES.SUBPOPULATION;
             }
+            
+            if (
+                (typeMatch = line.match(DEFINITION_PATTERNS.SUBPOP_NUMERIC)) !== null ||
+                (typeMatch = line.match(DEFINITION_PATTERNS.SUBPOP_SPLIT_NUMERIC)) !== null
+            ) {
+                const numericId = typeMatch[1];
+                const subpopName = `p${numericId}`;
+                trackingState.definedSubpopulations.add(subpopName);
+                (trackingState.instanceDefinitions as Record<string, string>)[subpopName] =
+                    CLASS_NAMES.SUBPOPULATION;
+            }
         }
 
-        // Pre-filter: Only check script block registrations if line contains relevant keywords
         if (line.includes('register') && line.includes('Callback')) {
             const scriptBlockPatterns = [
                 CALLBACK_REGISTRATION_PATTERNS.EARLY_EVENT,
@@ -251,19 +272,75 @@ export function trackInstanceDefinitions(
                 typeMatch[2];
         }
 
+        // Track user-defined functions with their doc comments
+        const funcMatch = line.match(EIDOS_FUNCTION_REGEX);
+        if (funcMatch) {
+            const returnType = funcMatch[1];
+            const functionName = funcMatch[2];
+            const parameters = funcMatch[3] || '';
+            
+            // Extract doc comment from lines above this function
+            const docComment = extractDocComment(lines, lineIndex);
+            
+            const userFuncInfo: UserFunctionInfo = {
+                name: functionName,
+                signature: `(${returnType})${functionName}(${parameters})`,
+                returnType,
+                parameters,
+                docComment,
+                line: lineIndex,
+            };
+            
+            trackingState.userFunctions.set(functionName, userFuncInfo);
+        }
+
         if ((typeMatch = line.match(DEFINITION_PATTERNS.ASSIGNMENT)) !== null) {
+            const varName = typeMatch[1];
             const rhs = typeMatch[2].trim();
-            const inferredType = inferTypeFromExpression(rhs);
+            
+            // Check if the RHS is a simple property access: ClassName.property or instance.property
+            const propertyAccessMatch = rhs.match(PROPERTY_ACCESS_PATTERN);
+            if (propertyAccessMatch) {
+                const objectName = propertyAccessMatch[1];
+                const propertyName = propertyAccessMatch[2];
+                
+                // Try to resolve the object to a class name
+                // First check if it's a known class name directly (e.g., Individual.age)
+                const knownClassValues = Object.values(CLASS_NAMES) as string[];
+                let resolvedClassName: string | null = null;
+                
+                if (knownClassValues.includes(objectName)) {
+                    // Direct class name access (e.g., Individual.age)
+                    resolvedClassName = objectName;
+                } else {
+                    // Try to resolve as an instance (e.g., ind.age where ind is an Individual)
+                    resolvedClassName = resolveClassName(
+                        objectName,
+                        trackingState.instanceDefinitions as Record<string, string>
+                    );
+                }
+                
+                if (resolvedClassName) {
+                    trackingState.propertyAssignments.set(varName, {
+                        className: resolvedClassName,
+                        propertyName: propertyName,
+                    });
+                }
+            }
+            
+            const inferredType = inferTypeFromExpression(
+                rhs,
+                trackingState.instanceDefinitions as Record<string, string>
+            );
             if (inferredType) {
-                (trackingState.instanceDefinitions as Record<string, string>)[typeMatch[1]] =
+                (trackingState.instanceDefinitions as Record<string, string>)[varName] =
                     inferredType;
             }
         }
     });
 
-    // Cache the result for future calls (only if not using provided state)
     if (!state) {
-        documentCache.set(document, trackingState);
+        documentCache.setTrackingState(document, trackingState);
     }
 
     return trackingState;
