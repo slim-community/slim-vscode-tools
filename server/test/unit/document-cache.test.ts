@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { documentCache } from '../../src/services/document-cache';
-import { TrackingState } from '../../src/config/types';
+import { TrackingState, LoopScope } from '../../src/config/types';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 
 describe('Document Cache', () => {
@@ -59,6 +59,81 @@ describe('Document Cache', () => {
 
             // Create new version of same document
             const doc2 = TextDocument.create('file:///test.slim', 'slim', 2, 'x = 10;');
+            const retrieved = documentCache.getTrackingState(doc2);
+
+            expect(retrieved).toBeNull(); // Should be invalidated
+        });
+
+        it('should cache loop scopes in tracking state', () => {
+            const doc = TextDocument.create(
+                'file:///test.slim',
+                'slim',
+                1,
+                `1 early() {
+    for (subpop in sim.subpopulations) {
+        catn(subpop.individualCount);
+    }
+}`
+            );
+            
+            const trackingState: TrackingState = {
+                instanceDefinitions: {},
+                propertyAssignments: new Map(),
+                definedConstants: new Set(),
+                definedMutationTypes: new Set(),
+                definedGenomicElementTypes: new Set(),
+                definedInteractionTypes: new Set(),
+                definedSubpopulations: new Set(),
+                definedScriptBlocks: new Set(),
+                definedSpecies: new Set(),
+                userFunctions: new Map(),
+                modelType: null,
+                callbackContextByLine: new Map(),
+                loopScopes: [{
+                    variableName: 'subpop',
+                    variableType: 'Subpopulation',
+                    startLine: 1,
+                    endLine: 3,
+                    braceDepth: 0,
+                }],
+            };
+
+            documentCache.setTrackingState(doc, trackingState);
+            const retrieved = documentCache.getTrackingState(doc);
+
+            expect(retrieved).toBeTruthy();
+            expect(retrieved?.loopScopes).toHaveLength(1);
+            expect(retrieved?.loopScopes[0].variableName).toBe('subpop');
+            expect(retrieved?.loopScopes[0].variableType).toBe('Subpopulation');
+        });
+
+        it('should invalidate loop scope cache on version change', () => {
+            const doc1 = TextDocument.create('file:///test.slim', 'slim', 1, 'for (x in 1:5) {}');
+            const trackingState1: TrackingState = {
+                instanceDefinitions: {},
+                propertyAssignments: new Map(),
+                definedConstants: new Set(),
+                definedMutationTypes: new Set(),
+                definedGenomicElementTypes: new Set(),
+                definedInteractionTypes: new Set(),
+                definedSubpopulations: new Set(),
+                definedScriptBlocks: new Set(),
+                definedSpecies: new Set(),
+                userFunctions: new Map(),
+                modelType: null,
+                callbackContextByLine: new Map(),
+                loopScopes: [{
+                    variableName: 'x',
+                    variableType: 'integer',
+                    startLine: 0,
+                    endLine: 0,
+                    braceDepth: 0,
+                }],
+            };
+
+            documentCache.setTrackingState(doc1, trackingState1);
+
+            const doc2 = TextDocument.create('file:///test.slim', 'slim', 2, 'for (y in 1:5) {}');
             const retrieved = documentCache.getTrackingState(doc2);
 
             expect(retrieved).toBeNull(); // Should be invalidated

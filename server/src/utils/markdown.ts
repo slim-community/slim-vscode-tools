@@ -85,7 +85,14 @@ export function createOperatorMarkdown(operator: string, operatorInfo: OperatorI
     return `**${operator}** (operator)\n\n${cleanDocumentationText(operatorInfo.description)}`;
 }
 
-export function createInstanceMarkdown(instanceName: string, instanceClass: string): string {
+export function createInstanceMarkdown(
+    instanceName: string, 
+    instanceClass: string,
+    mutationType?: string | null
+): string {
+    if (mutationType && instanceClass === 'Mutation') {
+        return `**${instanceName}** (instance of ${instanceClass}, type: \`${mutationType}\`)`;
+    }
     return `**${instanceName}** (instance of ${instanceClass})`;
 }
 

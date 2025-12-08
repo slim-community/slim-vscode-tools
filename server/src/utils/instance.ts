@@ -1,14 +1,49 @@
 import { CALLBACK_PSEUDO_PARAMETERS } from '../config/config';
-import { inferTypeFromExpression, resolveClassName } from './type-manager';
+import { inferTypeFromExpression, resolveClassName, inferLoopVariableType } from './type-manager';
 import { DEFINITION_PATTERNS, CALLBACK_REGISTRATION_PATTERNS, COMPILED_CALLBACK_PATTERNS, EIDOS_FUNCTION_REGEX } from '../config/config';
 import { CLASS_NAMES } from '../config/config';
 import { TrackingState, CallbackState, UserFunctionInfo, PropertySourceInfo } from '../config/types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { documentCache } from '../services/document-cache';
 import { extractDocComment } from './text-processing';
+import { LoopScope } from '../config/types';
 
 // Pattern to match property access: ClassName.property or instance.property
 const PROPERTY_ACCESS_PATTERN = /^([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)$/;
+
+// Pattern to match mutationsOfType calls: mutationsOfType(m1) or sim.mutationsOfType(m1)
+const MUTATIONS_OF_TYPE_PATTERN = /mutationsOfType\s*\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\)/;
+
+function extractMutationTypeFromExpression(expression: string): string | null {
+    const withoutArrayAccess = expression.replace(/\[[^\]]*\]/g, '');
+    const match = withoutArrayAccess.match(MUTATIONS_OF_TYPE_PATTERN);
+    return match ? match[1] : null;
+}
+
+function getMutationTypeForVariable(
+    rhs: string,
+    trackingState: TrackingState
+): string | null {
+    const mutationType = extractMutationTypeFromExpression(rhs);
+    if (mutationType) {
+        // Check if it's a defined mutation type OR if it's in instanceDefinitions as MutationType
+        if (trackingState.definedMutationTypes.has(mutationType) || 
+            trackingState.instanceDefinitions[mutationType] === CLASS_NAMES.MUTATION_TYPE) {
+            return mutationType;
+        }
+    }
+    
+    // Check if RHS is a variable that we know contains mutations of a specific type
+    const rhsVarMatch = rhs.match(/^([a-zA-Z_][a-zA-Z0-9_]*)(\[.*\])?$/);
+    if (rhsVarMatch) {
+        const sourceVar = rhsVarMatch[1];
+        if (trackingState.mutationTypeByInstance.has(sourceVar)) {
+            return trackingState.mutationTypeByInstance.get(sourceVar)!;
+        }
+    }
+    
+    return null;
+}
 
 export function trackInstanceDefinitions(
     document: TextDocument,
@@ -38,6 +73,8 @@ export function trackInstanceDefinitions(
         userFunctions: new Map<string, UserFunctionInfo>(),
         modelType: null,
         callbackContextByLine: new Map(),
+        loopScopes: [],
+        mutationTypeByInstance: new Map<string, string>(),
     };
     
     // Use cached lines or create and cache them
@@ -50,6 +87,9 @@ export function trackInstanceDefinitions(
     };
 
     let pendingCallback: string | null = null;
+
+    // Track brace depth for loop scope management
+    let currentBraceDepth = 0;
 
     lines.forEach((line, lineIndex) => {
         const { currentCallback, braceDepth, callbackStartLine } = callbackState;
@@ -70,6 +110,8 @@ export function trackInstanceDefinitions(
 
         const openBraces = (line.match(/{/g) || []).length;
         const closeBraces = (line.match(/}/g) || []).length;
+        const previousBraceDepth = currentBraceDepth;
+        currentBraceDepth += openBraces - closeBraces;
 
         if (callbackWithBraceMatch && openBraces > 0 && detectedCallback) {
             newCallback = detectedCallback;
@@ -194,19 +236,28 @@ export function trackInstanceDefinitions(
 
         if (line.includes('initializeMutationType')) {
             if ((typeMatch = line.match(DEFINITION_PATTERNS.MUTATION_TYPE)) !== null) {
-                trackingState.definedMutationTypes.add(typeMatch[1]);
+                const mutTypeName = typeMatch[1];
+                trackingState.definedMutationTypes.add(mutTypeName);
+                (trackingState.instanceDefinitions as Record<string, string>)[mutTypeName] =
+                    CLASS_NAMES.MUTATION_TYPE;
             }
         }
 
         if (line.includes('initializeGenomicElementType')) {
             if ((typeMatch = line.match(DEFINITION_PATTERNS.GENOMIC_ELEMENT_TYPE)) !== null) {
-                trackingState.definedGenomicElementTypes.add(typeMatch[1]);
+                const getTypeName = typeMatch[1];
+                trackingState.definedGenomicElementTypes.add(getTypeName);
+                (trackingState.instanceDefinitions as Record<string, string>)[getTypeName] =
+                    CLASS_NAMES.GENOMIC_ELEMENT_TYPE;
             }
         }
 
         if (line.includes('initializeInteractionType')) {
             if ((typeMatch = line.match(DEFINITION_PATTERNS.INTERACTION_TYPE)) !== null) {
-                trackingState.definedInteractionTypes.add(typeMatch[1]);
+                const intTypeName = typeMatch[1];
+                trackingState.definedInteractionTypes.add(intTypeName);
+                (trackingState.instanceDefinitions as Record<string, string>)[intTypeName] =
+                    CLASS_NAMES.INTERACTION_TYPE;
             }
         }
 
@@ -298,8 +349,18 @@ export function trackInstanceDefinitions(
             const varName = typeMatch[1];
             const rhs = typeMatch[2].trim();
             
-            // Check if the RHS is a simple property access: ClassName.property or instance.property
+            // Check if the RHS is a simple variable name (could be a loop variable)
+            const isSimpleVariable = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(rhs);
             const propertyAccessMatch = rhs.match(PROPERTY_ACCESS_PATTERN);
+            const needsScopeCheck = isSimpleVariable || propertyAccessMatch;
+            
+            // Use instanceDefinitions by default, only get full scope if needed
+            let variablesForInference = trackingState.instanceDefinitions as Record<string, string>;
+            if (needsScopeCheck) {
+                variablesForInference = getVariablesInScope(trackingState, lineIndex);
+            }
+            
+            // Check if the RHS is a simple property access: ClassName.property or instance.property
             if (propertyAccessMatch) {
                 const objectName = propertyAccessMatch[1];
                 const propertyName = propertyAccessMatch[2];
@@ -316,7 +377,7 @@ export function trackInstanceDefinitions(
                     // Try to resolve as an instance (e.g., ind.age where ind is an Individual)
                     resolvedClassName = resolveClassName(
                         objectName,
-                        trackingState.instanceDefinitions as Record<string, string>
+                        variablesForInference
                     );
                 }
                 
@@ -330,18 +391,137 @@ export function trackInstanceDefinitions(
             
             const inferredType = inferTypeFromExpression(
                 rhs,
-                trackingState.instanceDefinitions as Record<string, string>
+                variablesForInference
             );
             if (inferredType) {
                 (trackingState.instanceDefinitions as Record<string, string>)[varName] =
                     inferredType;
+                
+                // If this is a Mutation instance, check if we can extract the mutation type
+                if (inferredType === CLASS_NAMES.MUTATION) {
+                    const mutationType = getMutationTypeForVariable(rhs, trackingState);
+                    if (mutationType) {
+                        trackingState.mutationTypeByInstance.set(varName, mutationType);
+                    } else {
+                        // Check if RHS is a variable that already has a known mutation type
+                        const rhsVarMatch = rhs.match(/^([a-zA-Z_][a-zA-Z0-9_]*)$/);
+                        if (rhsVarMatch) {
+                            const sourceVar = rhsVarMatch[1];
+                            if (trackingState.mutationTypeByInstance.has(sourceVar)) {
+                                trackingState.mutationTypeByInstance.set(
+                                    varName,
+                                    trackingState.mutationTypeByInstance.get(sourceVar)!
+                                );
+                            }
+                        }
+                    }
+                } else if (inferredType === CLASS_NAMES.MUTATION + '[]') {
+                    // For mutation vectors, also track the mutation type
+                    const mutationType = getMutationTypeForVariable(rhs, trackingState);
+                    if (mutationType) {
+                        trackingState.mutationTypeByInstance.set(varName, mutationType);
+                    } else {
+                        // Check if RHS is a variable that already has a known mutation type
+                        const rhsVarMatch = rhs.match(/^([a-zA-Z_][a-zA-Z0-9_]*)$/);
+                        if (rhsVarMatch) {
+                            const sourceVar = rhsVarMatch[1];
+                            if (trackingState.mutationTypeByInstance.has(sourceVar)) {
+                                trackingState.mutationTypeByInstance.set(
+                                    varName,
+                                    trackingState.mutationTypeByInstance.get(sourceVar)!
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Track loop variables with scope
+        const forInMatch = line.match(/for\s*\(\s*(\w+)\s+in\s+((?:[^()]*|\([^()]*\))*)\)/);
+        if (forInMatch) {
+            const loopVarName = forInMatch[1];
+            const collection = forInMatch[2].trim();
+            
+            // Check if this is a single-line loop (ends with semicolon, no opening brace after the for statement)
+            const afterFor = line.substring(line.indexOf(')') + 1).trim();
+            const isSingleLineLoop = afterFor.endsWith(';') && !afterFor.startsWith('{');
+            
+            // Infer the type of the loop variable from the collection
+            const elementType = inferLoopVariableType(
+                collection,
+                trackingState.instanceDefinitions as Record<string, string>
+            );
+            
+            if (elementType) {
+                for (let i = trackingState.loopScopes.length - 1; i >= 0; i--) {
+                    const existingScope = trackingState.loopScopes[i];
+                    if (existingScope.endLine === -1 && existingScope.braceDepth >= previousBraceDepth) {
+                        existingScope.endLine = lineIndex - 1;
+                    }
+                }
+                
+                // Create a new loop scope
+                const loopScope: LoopScope = {
+                    variableName: loopVarName,
+                    variableType: elementType,
+                    startLine: lineIndex,
+                    endLine: isSingleLineLoop ? lineIndex : -1, 
+                    braceDepth: previousBraceDepth, 
+                };
+                
+                trackingState.loopScopes.push(loopScope);
+                
+                // If this is a Mutation loop variable, check if we can extract the mutation type
+                if (elementType === CLASS_NAMES.MUTATION) {
+                    const mutationType = getMutationTypeForVariable(collection, trackingState);
+                    if (mutationType) {
+                        trackingState.mutationTypeByInstance.set(loopVarName, mutationType);
+                    }
+                }
+            }
+        }
+        
+        // Close loop scopes when braces close
+        if (closeBraces > 0) {
+            for (let i = trackingState.loopScopes.length - 1; i >= 0; i--) {
+                const scope = trackingState.loopScopes[i];
+                if (scope.endLine === -1 && scope.braceDepth >= currentBraceDepth) {
+                    // This loop scope ended at the current line
+                    scope.endLine = lineIndex;
+                }
             }
         }
     });
+
+    // Close any remaining open loop scopes at the end of the document
+    for (const scope of trackingState.loopScopes) {
+        if (scope.endLine === -1) {
+            scope.endLine = lines.length - 1;
+        }
+    }
 
     if (!state) {
         documentCache.setTrackingState(document, trackingState);
     }
 
     return trackingState;
+}
+
+export function getVariablesInScope(
+    trackingState: TrackingState,
+    lineIndex: number
+): Record<string, string> {
+    const variables: Record<string, string> = {
+        ...trackingState.instanceDefinitions,
+    };
+    
+    for (const scope of trackingState.loopScopes) {
+        if (scope.startLine < lineIndex && 
+            (scope.endLine === -1 || lineIndex <= scope.endLine)) {
+            variables[scope.variableName] = scope.variableType;
+        }
+    }
+    
+    return variables;
 }

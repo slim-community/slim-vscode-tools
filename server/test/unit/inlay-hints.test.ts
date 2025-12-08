@@ -245,6 +245,108 @@ describe('Inlay Hints Provider', () => {
             expect(iHint).toBeDefined();
             expect(iHint.kind).toBe(InlayHintKind.Type);
         });
+
+        it('should provide type hints for nested loop variables', () => {
+            const document = TextDocument.create(
+                'file:///test.slim',
+                'slim',
+                1,
+                `1 early() {
+    sim.addSubpop("p1", 1000);
+    for (subpop in sim.subpopulations) {
+        for (ind in subpop.individuals) {
+            catn(ind.age);
+        }
+    }
+}`
+            );
+
+            mockDocuments.get = () => document;
+
+            const result = inlayHintHandler({
+                textDocument: { uri: 'file:///test.slim' },
+                range: Range.create(0, 0, 7, 0),
+            });
+
+            expect(result).toBeDefined();
+            expect(result.length).toBeGreaterThan(0);
+
+            // Should have type hints for both loop variables
+            const subpopHint = result.find((h: any) => 
+                h.label.includes('Subpopulation') && h.position.line === 2
+            );
+            const indHint = result.find((h: any) => 
+                h.label.includes('Individual') && h.position.line === 3
+            );
+            
+            expect(subpopHint).toBeDefined();
+            expect(indHint).toBeDefined();
+        });
+
+        it('should not show type hints for loop variables outside their scope', () => {
+            const document = TextDocument.create(
+                'file:///test.slim',
+                'slim',
+                1,
+                `1 early() {
+    for (subpop in sim.subpopulations) {
+        catn(subpop.individualCount);
+    }
+    // subpop should not have a hint here
+    x = subpop;
+}`
+            );
+
+            mockDocuments.get = () => document;
+
+            const result = inlayHintHandler({
+                textDocument: { uri: 'file:///test.slim' },
+                range: Range.create(0, 0, 6, 0),
+            });
+
+            expect(result).toBeDefined();
+            
+            // Should have hint inside loop (line 2)
+            const hintInLoop = result.find((h: any) => 
+                h.label.includes('Subpopulation') && h.position.line === 1
+            );
+            expect(hintInLoop).toBeDefined();
+            
+            // Should NOT have hint outside loop (line 5)
+            const hintOutside = result.find((h: any) => 
+                h.label.includes('Subpopulation') && h.position.line === 4
+            );
+            expect(hintOutside).toBeUndefined();
+        });
+
+        it('should handle loop variable type hints with complex collections', () => {
+            const document = TextDocument.create(
+                'file:///test.slim',
+                'slim',
+                1,
+                `1 early() {
+    muts = sim.mutationsOfType(m1);
+    for (mut in muts) {
+        catn(mut.position);
+    }
+}`
+            );
+
+            mockDocuments.get = () => document;
+
+            const result = inlayHintHandler({
+                textDocument: { uri: 'file:///test.slim' },
+                range: Range.create(0, 0, 5, 0),
+            });
+
+            expect(result).toBeDefined();
+            
+            // Should have type hint for mutation loop variable
+            const mutHint = result.find((h: any) => 
+                h.label.includes('Mutation') && h.position.line === 2
+            );
+            expect(mutHint).toBeDefined();
+        });
     });
 
     describe('Parameter Name Hints', () => {

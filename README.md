@@ -277,6 +277,8 @@ Initial release of `slim-tools` with the following features:
 - Fixed user-defined function handling to use the correct Eidos syntax
 - Added user-defined functions to tracking for hover info, completion, and signature help
 - Improve hover info behavior for class members
+- Improve completion to avoid document cache race conditions
+- Differentiate between mutations and mutation types across all providers
 - Fixed subpopulation definition patterns to handle multispecies models
 - Improved multi-line string handling in validation
 - Removed `--passWithNoTests` flag from language server test script (tests now required to pass)

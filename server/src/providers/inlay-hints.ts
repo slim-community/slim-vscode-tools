@@ -12,6 +12,7 @@ import { getFileType } from '../utils/file-type';
 import { parseEidosFunctionSignature } from '../utils/eidos-function-parser';
 import { isPureCommentLine, findMatchingParen, splitFunctionArguments } from '../utils/text-processing';
 import { documentCache } from '../services/document-cache';
+import { getVariablesInScope } from '../utils/instance';
 
 // Register inlay hints provider
 export function registerInlayHintsProvider(context: LanguageServerContext): void {
@@ -63,6 +64,9 @@ function getTypeHintsForLine(
 ): InlayHint[] {
     const hints: InlayHint[] = [];
 
+    // Get variables in scope at this line (including loop variables)
+    const instanceDefinitions = getVariablesInScope(trackingState, lineIndex);
+
     // Pattern: variable = expression;
     const assignmentMatch = line.match(DEFINITION_PATTERNS.ASSIGNMENT);
     if (assignmentMatch) {
@@ -75,15 +79,20 @@ function getTypeHintsForLine(
 
         const inferredType = inferTypeFromExpression(
             expression,
-            trackingState.instanceDefinitions
+            instanceDefinitions
         );
 
         if (inferredType) {
             const varIndex = line.indexOf(varName);
             if (varIndex !== -1) {
+                const mutationType = trackingState.mutationTypeByInstance.get(varName);
+                const label = mutationType && inferredType === 'Mutation'
+                    ? `: ${inferredType}<${mutationType}>`
+                    : `: ${inferredType}`;
+                
                 hints.push({
                     position: Position.create(lineIndex, varIndex + varName.length),
-                    label: `: ${inferredType}`,
+                    label: label,
                     kind: InlayHintKind.Type,
                     paddingLeft: false,
                     paddingRight: true,
@@ -100,15 +109,20 @@ function getTypeHintsForLine(
 
         const elementType = inferLoopVariableType(
             collection,
-            trackingState.instanceDefinitions
+            instanceDefinitions
         );
 
         if (elementType) {
             const varIndex = line.indexOf(varName);
             if (varIndex !== -1) {
+                const mutationType = trackingState.mutationTypeByInstance.get(varName);
+                const label = mutationType && elementType === 'Mutation'
+                    ? `: ${elementType}<${mutationType}>`
+                    : `: ${elementType}`;
+                
                 hints.push({
                     position: Position.create(lineIndex, varIndex + varName.length),
-                    label: `: ${elementType}`,
+                    label: label,
                     kind: InlayHintKind.Type,
                     paddingLeft: false,
                     paddingRight: true,

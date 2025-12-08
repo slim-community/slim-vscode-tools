@@ -33,19 +33,30 @@ import { cleanSignature, cleanTypeNames } from '../utils/text-processing';
 import { getFileType } from '../utils/file-type';
 import { resolveExpressionType } from '../utils/type-manager';
 import { documentCache } from './document-cache';
+import { getVariablesInScope } from '../utils/instance';
 
 export class CompletionService {
     constructor(private documentationService: DocumentationService) {}
 
     public getCompletions(
         document: TextDocument,
-        position: Position
+        position: Position,
+        expectedVersion?: number | null
     ): CompletionItem[] | CompletionList | null {
+        if (expectedVersion !== null && expectedVersion !== undefined) {
+            if (!this.validateDocumentVersion(document, expectedVersion)) {
+                // Document changed during processing - return empty to avoid stale completions
+                return [];
+            }
+        }
+        
         const lines = documentCache.getOrCreateLines(document);
         
         // Track instance definitions for better type resolution
         const trackingState = trackInstanceDefinitions(document);
-        const instanceDefinitions = trackingState.instanceDefinitions as Record<string, string>;
+        
+        // Get variables in scope at the current position (including loop variables)
+        const instanceDefinitions = getVariablesInScope(trackingState, position.line);
         
         // Determine file type for filtering
         const fileType = getFileType(document);
@@ -161,9 +172,15 @@ export class CompletionService {
                 break;
             }
             case 'userVariable': {
+                let docValue = `**${data.varName}**\n\nUser-defined variable of type: \`${data.varType}\``;
+                
+                if (data.varType === 'Mutation' && data.mutationType) {
+                    docValue += ` (mutation type: \`${data.mutationType}\`)`;
+                }
+                
                 item.documentation = {
                     kind: MarkupKind.Markdown,
-                    value: `**${data.varName}**\n\nUser-defined variable of type: \`${data.varType}\``,
+                    value: docValue,
                 };
                 break;
             }
@@ -370,15 +387,21 @@ export class CompletionService {
         for (const [varName, varType] of Object.entries(trackingState.instanceDefinitions)) {
             if (builtIns.has(varName) || alreadyAdded.has(varName)) continue;
             
+            const mutationType = trackingState.mutationTypeByInstance.get(varName);
+            const detail = mutationType && varType === 'Mutation' 
+                ? `Variable: ${varType} (type: ${mutationType})`
+                : `Variable: ${varType}`;
+            
             completions.push({
                 label: varName,
                 kind: CompletionItemKind.Variable,
-                detail: `Variable: ${varType}`,
+                detail: detail,
                 sortText: `1_${varName}`, 
                 data: {
                     type: 'userVariable',
                     varName,
                     varType,
+                    mutationType: mutationType || undefined,
                 },
             });
         }
@@ -505,6 +528,14 @@ export class CompletionService {
                 funcInfo,
             },
         };
+    }
+
+    private validateDocumentVersion(
+        document: TextDocument,
+        expectedVersion: number | null
+    ): boolean {
+        if (expectedVersion === null) return true;
+        return document.version === expectedVersion;
     }
 }
 

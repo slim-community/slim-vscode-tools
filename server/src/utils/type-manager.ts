@@ -46,6 +46,14 @@ export function inferTypeFromExpression(
         return null;
     }
 
+    // Check if this is a simple variable name that we know the type of
+    if (instanceDefinitions && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(trimmed)) {
+        const varType = instanceDefinitions[trimmed];
+        if (varType) {
+            return varType;
+        }
+    }
+
     // For expressions with array access, use specialized handler that handles chained access
     if (trimmed.includes('[')) {
         const arrayType = inferTypeFromArrayAccess(trimmed, instanceDefinitions);
@@ -339,6 +347,16 @@ export function inferLoopVariableType(
     collection: string,
     instanceDefinitions?: Record<string, string>
 ): string | null {
+    const trimmed = collection.trim();
+    
+    // First, check if it's a simple variable name - look it up directly
+    if (instanceDefinitions && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(trimmed)) {
+        const varType = instanceDefinitions[trimmed];
+        if (varType) {
+            return vectorToSingleton(varType);
+        }
+    }
+    
     if (collection.includes('.individuals')) {
         return CLASS_NAMES.INDIVIDUAL;
     }
@@ -346,6 +364,9 @@ export function inferLoopVariableType(
         return CLASS_NAMES.HAPLOSOME;
     }
     if (collection.includes('.mutations')) {
+        return CLASS_NAMES.MUTATION;
+    }
+    if (collection.includes('mutationsOfType')) {
         return CLASS_NAMES.MUTATION;
     }
     if (collection.includes('.subpopulations') || collection === 'sim.subpopulations') {
@@ -402,4 +423,4 @@ export function resolveExpressionType(
 
     const chainedType = inferTypeFromChainedAccess(trimmed, baseType);
     return chainedType ? vectorToSingleton(chainedType) : null;
-}
+} 

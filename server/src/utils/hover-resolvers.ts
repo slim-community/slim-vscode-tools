@@ -111,10 +111,11 @@ export function getHoverForWord(
     typesData: Record<string, TypeInfo>,
     instanceDefinitions: Record<string, string>,
     userFunctions?: Map<string, UserFunctionInfo>,
-    propertyAssignments?: Map<string, PropertySourceInfo>
+    propertyAssignments?: Map<string, PropertySourceInfo>,
+    mutationType?: string | null
 ): Hover | null {
     if (context.instanceClass) {
-        return createHoverResponse(createInstanceMarkdown(word, context.instanceClass));
+        return createHoverResponse(createInstanceMarkdown(word, context.instanceClass, mutationType));
     }
 
     if (context.isMethodOrProperty && context.className) {

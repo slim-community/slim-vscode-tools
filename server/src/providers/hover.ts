@@ -43,6 +43,9 @@ export function registerHoverProvider(context: LanguageServerContext): void {
         );
         if (!wordInfo) return null;
 
+        // Get mutation type if this is a mutation instance
+        const mutationType = trackingState.mutationTypeByInstance.get(wordInfo.word) || null;
+        
         return getHoverForWord(
             wordInfo.word,
             wordInfo.wordContext,
@@ -52,7 +55,8 @@ export function registerHoverProvider(context: LanguageServerContext): void {
             typesData,
             trackingState.instanceDefinitions as Record<string, string>,
             trackingState.userFunctions,
-            trackingState.propertyAssignments
+            trackingState.propertyAssignments,
+            mutationType
         );
     });
 }

@@ -177,6 +177,8 @@ export interface TrackingState {
     userFunctions: Map<string, UserFunctionInfo>;
     modelType: 'WF' | 'nonWF' | null;
     callbackContextByLine: Map<number, string | null>;
+    loopScopes: LoopScope[];
+    mutationTypeByInstance: Map<string, string>; // Maps mutation instance names to their mutation type (e.g., "mut" -> "m1")
 }
 
 // Tracks current callback block during parsing (name, nesting depth, start line)
@@ -284,4 +286,13 @@ export interface CommentRanges {
 export interface BlockType {
     kind?: FoldingRangeKind;
     type: string;
+}
+
+// Code block for loop scopes
+export interface LoopScope {
+    variableName: string;
+    variableType: string;
+    startLine: number;
+    endLine: number; // -1 if not yet determined
+    braceDepth: number; // Depth when loop started
 }
