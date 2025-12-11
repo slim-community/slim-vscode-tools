@@ -17,6 +17,16 @@ class ConsoleLogger implements Logger {
     }
 }
 
+class SilentLogger implements Logger {
+    log(_message: string): void {
+        // Silent - do nothing
+    }
+
+    error(_message: string): void {
+        // Silent - do nothing
+    }
+}
+
 class ConnectionLogger implements Logger {
     constructor(private readonly connection: Connection) {}
 
@@ -34,6 +44,10 @@ let logger: Logger = new ConsoleLogger();
 
 export function initializeLogger(connection: Connection): void {
     logger = new ConnectionLogger(connection);
+}
+
+export function setLoggerSilent(silent: boolean): void {
+    logger = silent ? new SilentLogger() : new ConsoleLogger();
 }
 
 export function log(message: string): void {

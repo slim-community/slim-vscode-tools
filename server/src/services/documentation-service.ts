@@ -125,11 +125,8 @@ export class DocumentationService {
         return this.filterByLanguageMode(this.typesData, mode);
     }
 
-    public getOperators(mode?: LanguageMode): Record<string, OperatorInfo> {
-        if (!mode) {
-            return this.operatorsData;
-        }
-        return this.filterByLanguageMode(this.operatorsData, mode);
+    public getOperators(): Record<string, OperatorInfo> {
+        return this.operatorsData;
     }
 
     public getClassConstructors(mode?: LanguageMode): Record<string, ConstructorInfo> {
@@ -197,7 +194,6 @@ export class DocumentationService {
         return {
             ...operatorInfo,
             signature: operatorInfo.signature || '',
-            source: 'eidos', 
         };
     }
 

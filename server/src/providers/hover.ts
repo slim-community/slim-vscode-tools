@@ -23,7 +23,7 @@ export function registerHoverProvider(context: LanguageServerContext): void {
         const classesData = documentationService.getClasses(fileType);
         const callbacksData = documentationService.getCallbacks(fileType);
         const typesData = documentationService.getTypes(fileType);
-        const operatorsData = documentationService.getOperators(fileType);
+        const operatorsData = documentationService.getOperators();
 
         // Check for operators first
         const operator = getOperatorAtPosition(text, position);
@@ -43,6 +43,9 @@ export function registerHoverProvider(context: LanguageServerContext): void {
         );
         if (!wordInfo) return null;
 
+        // Get mutation type if this is a mutation instance
+        const mutationType = trackingState.mutationTypeByInstance.get(wordInfo.word) || null;
+        
         return getHoverForWord(
             wordInfo.word,
             wordInfo.wordContext,
@@ -50,7 +53,10 @@ export function registerHoverProvider(context: LanguageServerContext): void {
             classesData,
             callbacksData,
             typesData,
-            trackingState.instanceDefinitions as Record<string, string>
+            trackingState.instanceDefinitions as Record<string, string>,
+            trackingState.userFunctions,
+            trackingState.propertyAssignments,
+            mutationType
         );
     });
 }

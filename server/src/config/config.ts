@@ -48,18 +48,6 @@ export const INSTANCE_TO_CLASS_MAP: { [key: string]: string } = {
     chr: CLASS_NAMES.CHROMOSOME,
 };
 
-export const SLIM_KEYWORDS = [
-    'initialize',
-    'early',
-    'late',
-    'fitness',
-    'interaction',
-    'mateChoice',
-    'modifyChild',
-    'mutation',
-    'recombination',
-];
-
 // ============================================================================
 // Operators
 // ============================================================================
@@ -268,7 +256,7 @@ export const TYPE_INFERENCE_PATTERNS = {
     LOGICAL_OPERATORS: /^(==|!=|<|>|<=|>=|&&|\|\||!)/,
     LOGICAL_FUNCTIONS: /^(all|any|isNULL|isNAN|isFinite|isInfinite)\s*\(/,
     SUBPOPULATION_METHODS:
-        /\.(addSubpop|addSubpopSplit|subpopulations|subpopulationsWithIDs|subpopulationsWithNames|subpopulationByID)\(/,
+        /\.(addSubpop|addSubpopSplit|subpopulations|subpopulationsWithIDs|subpopulationsWithNames|subpopulationByID)(\[|$|\()/,
     INDIVIDUAL_METHODS: /\.(individuals|sampleIndividuals|individualsWithPedigreeIDs)(\[|$|\()/,
     HAPLOSOME_METHODS: /\.(genomes|haplosomesForChromosomes|genome1|genome2)(\[|$|\()/,
     MUTATION_METHODS:
@@ -285,7 +273,6 @@ export const IDENTIFIER_PATTERNS = {
     WORD: /\b[a-zA-Z_][a-zA-Z0-9_]*\b/g,
     METHOD_CALL: /\b(\w+)\s*\.\s*(\w+)\s*\(/g,
     PROPERTY_ACCESS: /\b(\w+)\s*\.\s*(\w+)\b(?![\(\w])/g,
-    FUNCTION_CALL: /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g,
     DOT_PATTERN: /([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*$/,
     DOT_WITH_MEMBER: /([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)?/g,
 } as const;
@@ -295,8 +282,10 @@ export const DEFINITION_PATTERNS = {
     MUTATION_TYPE: /initializeMutationType\s*\(\s*"?(m\d+)"?/,
     GENOMIC_ELEMENT_TYPE: /initializeGenomicElementType\s*\(\s*"?(g\d+)"?/,
     INTERACTION_TYPE: /initializeInteractionType\s*\(\s*"?(i\d+)"?/,
-    SUBPOP: /sim\.addSubpop\("(\w+)"/,
-    SUBPOP_SPLIT: /sim\.addSubpopSplit\("(\w+)"/,
+    SUBPOP: /(?:sim|species|\w+)\.addSubpop\("(\w+)"/,
+    SUBPOP_SPLIT: /(?:sim|species|\w+)\.addSubpopSplit\("(\w+)"/,
+    SUBPOP_NUMERIC: /(?:sim|species|\w+)\.addSubpop\s*\(\s*(\d+)\s*,/,
+    SUBPOP_SPLIT_NUMERIC: /(?:sim|species|\w+)\.addSubpopSplit\s*\(\s*(\d+)\s*,/,
     SPECIES: /species\s+(\w+)\s+initialize/,
     SCRIPT_BLOCK:
         /(?:first|early|late|initialize|fitnessEffect|interaction|mateChoice|modifyChild|mutation|mutationEffect|recombination|reproduction|survival)\s*\(\s*"(\w+)"\s*\)/,
@@ -334,8 +323,6 @@ export const EVENT_PATTERNS = {
     EVENT_WITH_PARAMS: /(first|early|late)\s*\(\s*[^)]+\s*\)\s*\{/,
     EVENT_MATCH: /(first|early|late)\s*\(/,
     OLD_SYNTAX: /^\s*(\d+)\s*\{/,
-    CALLBACK_DEFINITION:
-        /(?:species\s+\w+\s+)?(?:s\d+\s+)?(?:\d+(?::\d+)?\s+)?(initialize|mutationEffect|fitnessEffect|mateChoice|modifyChild|recombination|interaction|reproduction|mutation|survival|early|late|first)\s*\([^)]*\)\s*\{/i,
 } as const;
 
 export const CALLBACK_REGISTRATION_PATTERNS = {
@@ -364,4 +351,130 @@ export const COMPILED_CALLBACK_PATTERNS = {
         `(?:species\\s+\\w+\\s+)?(?:s\\d+\\s+)?(?:\\d+(?::\\d+)?\\s+)?(${callbackNamesJoined})\\s*\\([^)]*\\)\\s*$`,
         'i'
     ),
+    CALLBACK_CALL: new RegExp(`\\b(${callbackNamesJoined})\\s*\\(`, 'i'),
 } as const;
+
+export const EIDOS_FUNCTION_REGEX = /function\s*\(([^)]+)\)\s*(\w+)\s*\(([^)]*)\)/;
+
+export const QUOTED_DEFINITION_FUNCTION_PATTERNS = [
+    /defineConstant\s*\(\s*$/,
+    /initializeMutationType\s*\(\s*$/,
+    /initializeGenomicElementType\s*\(\s*$/,
+    /initializeInteractionType\s*\(\s*$/,
+    /addSubpop\s*\(\s*$/,
+    /addSubpopSplit\s*\(\s*$/,
+    /initializeSpecies\s*\(\s*$/,
+    /registerEarlyEvent\s*\(\s*$/,
+    /registerLateEvent\s*\(\s*$/,
+    /registerFirstEvent\s*\(\s*$/,
+    /registerFitnessCallback\s*\(\s*$/,
+    /registerInteractionCallback\s*\(\s*$/,
+    /registerMateChoiceCallback\s*\(\s*$/,
+    /registerModifyChildCallback\s*\(\s*$/,
+    /registerMutationCallback\s*\(\s*$/,
+    /registerMutationEffectCallback\s*\(\s*$/,
+    /registerRecombinationCallback\s*\(\s*$/,
+    /registerReproductionCallback\s*\(\s*$/,
+    /registerSurvivalCallback\s*\(\s*$/,
+];
+
+// ============================================================================
+// Validation error messages
+// ============================================================================
+
+export const ERROR_MESSAGES = {
+    // Brace errors
+    UNEXPECTED_CLOSING_BRACE: 'Unexpected closing brace',
+    UNCLOSED_BRACE: 'Unclosed brace(s)',
+
+    // Semicolon warnings
+    MISSING_SEMICOLON: 'Statement might be missing a semicolon',
+
+    // String errors
+    UNCLOSED_STRING: 'Unclosed string literal (missing closing quote)',
+
+    // Event errors
+    NO_EIDOS_EVENT:
+        'No Eidos event found to start the simulation. At least one first(), early(), or late() event is required.',
+    OLD_SYNTAX:
+        'Event type must be specified explicitly. Use "1 early() { ... }" instead of "1 { ... }"',
+    EVENT_PARAMETERS: (eventName: string) => `${eventName}() event needs 0 parameters`,
+
+    // Definition errors
+    DUPLICATE_DEFINITION: (typeName: string, id: string, firstLine: number) =>
+        `${typeName} ${id} already defined (first defined at line ${firstLine})`,
+    RESERVED_IDENTIFIER: (id: string, context?: string) =>
+        `Identifier '${id}' is reserved and cannot be used${context ? ` for ${context}` : ''}`,
+    RESERVED_SPECIES_NAME: (name: string) =>
+        `Species name '${name}' is reserved and cannot be used`,
+
+    // Method and property errors
+    METHOD_NOT_EXISTS: (methodName: string, className: string) =>
+        `Method '${methodName}' does not exist on ${className}`,
+    PROPERTY_NOT_EXISTS: (propertyName: string, className: string) =>
+        `Property '${propertyName}' does not exist on ${className}`,
+
+    // Function call errors
+    FUNCTION_NOT_FOUND: (funcName: string) =>
+        `Function '${funcName}' not found in SLiM/Eidos documentation`,
+
+    // NULL assignment errors
+    NULL_TO_NON_NULLABLE: (paramName: string, typeName: string, context?: string) => {
+        const contextStr = context ? ` in ${context}` : '';
+        return `NULL cannot be passed to non-nullable parameter '${paramName}' of type '${typeName}'${contextStr}`;
+    },
+
+    // Reference warnings
+    UNDEFINED_REFERENCE: (typeName: string, id: string) =>
+        `${typeName} ${id} may not be defined in the focal species`,
+} as const;
+
+export const TYPE_NAMES_FOR_ERRORS = {
+    MUTATION_TYPE: 'Mutation type',
+    GENOMIC_ELEMENT_TYPE: 'Genomic element type',
+    INTERACTION_TYPE: 'Interaction type',
+    SUBPOPULATION: 'Subpopulation',
+    SPECIES: 'Species',
+    CONSTANT: 'Constant',
+    SCRIPT_BLOCK: 'Script block',
+} as const;
+
+// ============================================================================
+// Inlay hints
+// ============================================================================
+
+export const INLAY_HINT_PATTERNS = {
+    FOR_IN_LOOP: /for\s*\(\s*(\w+)\s+in\s+([^)]+)\)/,
+    FUNCTION_CALL: /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g,
+    CONTROL_STRUCTURES: ['if', 'for', 'while', 'function'] as readonly string[],
+} as const;
+
+// ============================================================================
+// Folding ranges
+// ============================================================================
+
+export const FOLDING_RANGE_PATTERNS = {
+    SLIM_CALLBACK: new RegExp(`^\\d+[:\\d]*\\s+(${callbackNamesJoined})\\s*\\(`),
+    INITIALIZE_BLOCK: /^initialize\s*\(/,
+    FUNCTION_DEFINITION: /^function\s+\(/,
+    CONDITIONAL_BLOCK: /^(if|else\s+if|else)\s*(\(|{)/,
+    LOOP_BLOCK: /^(for|while|do)\s*(\(|{)/,
+} as const;
+
+// ============================================================================
+// Caching
+// ============================================================================
+
+export const CACHE_CONFIG = {
+    MAX_SIZE: 25,
+    ENABLE_STATS: false,
+} as const;
+
+// ============================================================================
+// Formatting (mutable for user configuration)
+// ============================================================================
+
+export const FORMATTER_CONFIG = {
+    MAX_INDENT_LEVEL: 50,
+    MAX_CONSECUTIVE_BLANK_LINES: 2,
+};
